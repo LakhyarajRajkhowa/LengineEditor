@@ -4,10 +4,12 @@ using namespace Lengine;
 
 InspectorPanel::InspectorPanel(
     SceneManager& scnMgr,
-    AssetManager& asstMgr
+    AssetManager& asstMgr,
+    PhysicsSystem& physSystem
 ) :
     sceneManager(scnMgr),
-    assets(asstMgr)
+    assets(asstMgr),
+    physSystem(physSystem)
 {
 }
 
@@ -402,6 +404,12 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
     Scene* scene = sceneManager.getActiveScene();
     Entity* entity = scene->getEntityByID(entityID);
 
+    NameTagComponentStorage& NameTags = scene->NameTags();
+    TransformStorage& transforms = scene->Transforms();
+    ColliderStorage& colliders = scene->Colliders();
+    RigidbodyStorage& rigidbodies = scene->Rigidbodies();
+   
+
     if (!entity) {
         ImGui::Text("No entity selected.");
         return;
@@ -409,7 +417,7 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
     
     // ---------------- NAME ----------------
 
-    auto& tag = scene->NameTags().Get(entity->getID());
+    auto& tag = NameTags.Get(entity->getID());
 
     char buffer[256] = {};
     strcpy_s(buffer, sizeof(buffer), tag.name.c_str());
@@ -421,11 +429,11 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
     }
     ImGui::Spacing();
 
-    
+    // ----- TRANSFORM -----
 
-    if (scene->Transforms().Has(entity->getID()))
+    if (transforms.Has(entity->getID()))
     {
-        auto& tr = scene->Transforms().Get(entity->getID());
+        auto& tr = transforms.Get(entity->getID());
 
         if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
 
@@ -1021,6 +1029,190 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
         {
             auto& cam = scene->Cameras().Add(entity->getID());
             cam.recalculateProjection();
+        }
+
+        ImGui::Separator();
+        ImGui::Spacing();
+    }
+
+    // ----- RIGIDBODY -----
+
+    if (rigidbodies.Has(entity->getID()))
+    {
+        auto& rb = rigidbodies.Get(entity->getID());
+
+        if (ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            // ---------- MASS ----------
+            ImGui::Text("Mass");
+           ImGui::SameLine();
+
+            if (ImGui::Button("Reset##mass"))
+            {
+                rb.mass = 1.0f;
+            }
+
+            ImGui::DragFloat("##Mass", &rb.mass, 0.1f, 0.01f, 1000.0f);
+
+            // ---------- GRAVITY ----------
+            ImGui::Checkbox("Use Gravity", &rb.useGravity);
+
+            // ---------- KINEMATIC ----------
+            ImGui::Checkbox("Is Kinematic", &rb.isKinematic);
+
+            // ---------- REMOVE ----------
+            ImGui::Spacing();
+            if (ImGui::Button("Remove Rigidbody"))
+            {
+                physSystem.DeleteRigidBody(entityID, colliders);
+                scene->Rigidbodies().Remove(entityID);
+               
+            }
+        }
+    }
+    else
+    {
+        ImGui::Spacing();
+        ImGui::Separator();
+
+        if (ImGui::Button("Add Rigidbody Component", buttonSize))
+        {
+            
+            if (transforms.Has(entityID)) {
+
+                rigidbodies.Add(entityID);
+                physSystem.AddRigidbody(entityID, rigidbodies.Get(entityID));
+
+            }
+            else 
+                std::cout << "Cannot add Rigid Body : No transform !" << std::endl;
+            
+        }
+
+        ImGui::Separator();
+        ImGui::Spacing();
+    }
+
+    // ----- COLLIDER -----
+
+    if (colliders.Has(entityID))
+    {
+        auto& col = colliders.Get(entityID);
+
+        if (ImGui::CollapsingHeader("Collider", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            for (size_t i = 0; i < col.shapes.size(); i++)
+            {
+                auto& shape = col.shapes[i];
+
+                ImGui::PushID((int)i);
+
+                if (ImGui::TreeNode("Shape"))
+                {
+                    // ---------- TYPE ----------
+                    const char* colliderTypes[] =
+                    {
+                        "Box",
+                        "Sphere",
+                        "Capsule"
+                    };
+
+                    int currentType = (int)shape.type;
+
+                    if (ImGui::Combo("Type", &currentType, colliderTypes, IM_ARRAYSIZE(colliderTypes)))
+                    {
+                        shape.type = (ColliderShape::Type)currentType;
+                        shape.dirty = true;
+                    }
+
+                    // ---------- BOX ----------
+                    if (shape.type == ColliderShape::Type::Box)
+                    {
+                        if (ImGui::DragFloat3("Size", glm::value_ptr(shape.size), 0.1f))
+                            shape.dirty = true;
+                    }
+
+                    // ---------- SPHERE ----------
+                    if (shape.type == ColliderShape::Type::Sphere)
+                    {
+                        if (ImGui::DragFloat("Radius", &shape.radius, 0.05f))
+                            shape.dirty = true;
+                    }
+
+                    // ---------- CAPSULE ----------
+                    if (shape.type == ColliderShape::Type::Capsule)
+                    {
+                        if (ImGui::DragFloat("Radius", &shape.radius, 0.05f))
+                            shape.dirty = true;
+
+                        if (ImGui::DragFloat("Height", &shape.height, 0.05f))
+                            shape.dirty = true;
+                    }
+
+                    // ---------- TRIGGER ----------
+                    if (ImGui::Checkbox("Is Trigger", &shape.isTrigger))
+                        shape.dirty = true;
+
+                    ImGui::Spacing();
+
+                    // ---------- REMOVE SHAPE ----------
+                    if (ImGui::Button("Delete Shape"))
+                    {
+                        physSystem.DeleteColliderShape(entityID, col, i);
+                        ImGui::TreePop();
+                        ImGui::PopID();
+                        break;
+                    }
+
+                    ImGui::TreePop();
+                }
+
+                ImGui::PopID();
+            }
+
+            ImGui::Spacing();
+
+            // ---------- ADD SHAPE ----------
+            if (ImGui::Button("Add Box"))
+                physSystem.AddCollider(entityID, col, ColliderShape::Type::Box);
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Add Sphere"))
+                physSystem.AddCollider(entityID, col, ColliderShape::Type::Sphere);
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Add Capsule"))
+                physSystem.AddCollider(entityID, col, ColliderShape::Type::Capsule);
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // ---------- REMOVE COLLIDER ----------
+            if (ImGui::Button("Delete Collider Component"))
+            {
+                physSystem.DeleteCollider(entityID, col);
+                scene->Colliders().Remove(entityID);
+            }
+        }
+    }
+    else
+    {
+        ImGui::Spacing();
+        ImGui::Separator();
+
+        if (ImGui::Button("Add Collider Component", buttonSize))
+        {
+            if (scene->Transforms().Has(entityID))
+            {
+                scene->Colliders().Add(entityID);
+            }
+            else
+            {
+                std::cout << "Cannot add Collider : No Transform !" << std::endl;
+            }
         }
 
         ImGui::Separator();

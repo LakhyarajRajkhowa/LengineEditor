@@ -13,6 +13,11 @@ file(GLOB CORE_SOURCES
     "src/core/*.h"
 )
 
+file(GLOB GRAPHICS_SOURCES
+    "src/graphics/*.cpp"
+    "src/graphics/*.h"
+)
+
 file(GLOB PANEL_SOURCES
     "src/panels/*.cpp"
     "src/panels/*.h"
@@ -46,6 +51,7 @@ set(EXTERNAL_IMGUI_SOURCES
 # -------------------------------
 
 source_group("core" FILES ${CORE_SOURCES})
+source_group("graphics" FILES ${GRAPHICS_SOURCES})
 source_group("panels" FILES ${PANEL_SOURCES})
 source_group("imgui" FILES ${IMGUI_SOURCES})
 source_group("external" FILES ${EXTERNAL_SRC})
@@ -57,6 +63,7 @@ source_group("external" FILES ${EXTERNAL_SRC})
 add_executable(Editor
     main.cpp
     ${CORE_SOURCES}
+    ${GRAPHICS_SOURCES}
     ${PANEL_SOURCES}
     ${IMGUI_SOURCES}
     ${EXTERNAL_IMGUI_SOURCES}
@@ -70,10 +77,12 @@ add_executable(Editor
 target_include_directories(Editor PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics
     ${CMAKE_CURRENT_SOURCE_DIR}/src/panels
     ${CMAKE_CURRENT_SOURCE_DIR}/src/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/src/external/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/src/external
+    
 )
 
 # -------------------------------

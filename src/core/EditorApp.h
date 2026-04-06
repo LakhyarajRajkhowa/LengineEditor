@@ -17,16 +17,24 @@
 #include "imgui/ImguiLayer.h"
 #include "EditorLayer.h"
 
+#include "graphics/PhysicsDebugRenderer.h"
+
 namespace Lengine {
     class EditorOverlayPass
     {
     public:
-        EditorOverlayPass(AssetManager& assets_) : assets(assets_), gizmos(assets_) {
+        EditorOverlayPass(AssetManager& assets_ , PhysicsSystem& physics_) :
+            assets(assets_),
+            physics(physics_),
+            gizmos(assets_),
+            colliderRenderer(physics_)
+        {
         }
         void InitGizmos() {
             gizmos.InitGizmo();
         }
         GizmoRenderer& getGizmos() { return gizmos; }
+        PhysicsDebugRenderer& getPhysicsDebugRenderer() { return colliderRenderer; }
 
         void RenderGizmoGrid(RenderContext& ctx, Framebuffer& target)
         {
@@ -41,9 +49,26 @@ namespace Lengine {
             target.Unbind();
         }
 
+        void RenderPhysicsCollider(RenderContext& ctx, Framebuffer& target)
+        {
+            target.Bind();
+
+            glDisable(GL_CULL_FACE);
+
+            colliderRenderer.Render(ctx);
+
+            glEnable(GL_CULL_FACE);
+
+            target.Unbind();
+        }
+
     private:
         AssetManager& assets;
+        PhysicsSystem& physics;
+
         GizmoRenderer gizmos;
+        PhysicsDebugRenderer colliderRenderer;
+
     };
 
     class Editor
@@ -59,6 +84,7 @@ namespace Lengine {
             RenderSettings& renderSettings,
             RuntimeStats& runtimeStats,
             RenderPipeline& renderPipeline,
+            PhysicsSystem& physSystem,
             bool& isRunning
         );
 
@@ -89,6 +115,7 @@ namespace Lengine {
 
         EditorOverlayPass editorOverlays;
 
+        PhysicsSystem& physSystem;
     
     };
 

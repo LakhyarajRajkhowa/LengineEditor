@@ -14,7 +14,8 @@ namespace Lengine {
         InputManager& inputMgr,
         AssetManager& assetMgr,
         RenderSettings& rndrSett,
-        RuntimeStats& stats_
+        RuntimeStats& stats_,
+        PhysicsSystem& physSystem
     )
         :
         window(window),
@@ -25,12 +26,13 @@ namespace Lengine {
         assetManager(assetMgr),
         renderSettings(rndrSett), 
         hierarchyPanel(scnMgr,assetMgr),
-        inspectorPanel(scnMgr, assetMgr),
+        inspectorPanel(scnMgr, assetMgr, physSystem),
         consolePanel(buffer),
         assetPanel(Paths::ActiveGameFolder, assetMgr),
         rendererSettingsPanel(rndrSett),
         performancePanel(stats_),
-        viewportPanel(window, cam, scnMgr)
+        viewportPanel(window, cam, scnMgr),
+        physSystem(physSystem)
     {
 
     }

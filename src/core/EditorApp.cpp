@@ -11,6 +11,7 @@ namespace Lengine {
         RenderSettings& renderSettings,
         RuntimeStats& runtimeStats,
         RenderPipeline& renderPipeline,
+        PhysicsSystem& physSystem,
         bool& isRunning
     )
         :
@@ -31,7 +32,7 @@ namespace Lengine {
             window.getWindow(),
             window.getGlContext()
         ),
-        editorOverlays(assetManager),
+        editorOverlays(assetManager, physSystem),
         editorLayer(
             window,
             logBuffer,
@@ -41,8 +42,10 @@ namespace Lengine {
             inputManager,
             assetManager,
             renderSettings,
-            runtimeStats
-        )
+            runtimeStats,
+            physSystem
+        ),
+        physSystem(physSystem)
 
 
     {
@@ -111,6 +114,7 @@ namespace Lengine {
         renderPipeline.Render(ctx);
 
         editorOverlays.RenderGizmoGrid(ctx, renderPipeline.GetFinalFramebuffer());
+     //   editorOverlays.RenderPhysicsCollider(ctx, renderPipeline.GetFinalFramebuffer());
 
         editorLayer.OnImGuiRender(renderPipeline.GetFinalImage(), renderPipeline.GetHDRSkybox());
 

@@ -10,7 +10,6 @@
 
 
 #include "graphics/geometry/ray.h"
-#include "graphics/geometry/Gizmos.h"
 
 namespace Lengine {
     class EditorManipulator

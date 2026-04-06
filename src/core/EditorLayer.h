@@ -22,7 +22,7 @@
 #include "EditorManipulation.h"
 
 #include "graphics/geometry/ray.h"
-#include "graphics/geometry/Gizmos.h"
+#include "graphics/Gizmos.h"
 
 namespace Lengine {
    
@@ -39,7 +39,8 @@ namespace Lengine {
             InputManager& inputManager,
             AssetManager& assetManager,
             RenderSettings& rndrSett,
-            RuntimeStats& stats
+            RuntimeStats& stats,
+            PhysicsSystem& physSystem
             );
         ~EditorLayer() = default;
 
@@ -85,7 +86,7 @@ namespace Lengine {
         AssetManager& assetManager;
         RenderSettings& renderSettings;
 
-    
+        PhysicsSystem& physSystem;
     };
 
 }

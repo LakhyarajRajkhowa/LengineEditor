@@ -7,6 +7,8 @@
 #include "scene/SceneManager.h"
 
 #include "EditorSelection.h"
+
+#include "physics/PhysicsSystem.h"
 namespace Lengine {
 
     struct InspectorState {
@@ -18,7 +20,8 @@ namespace Lengine {
     public:
         InspectorPanel(
             SceneManager& sceneManager,
-            AssetManager& assetManager
+            AssetManager& assetManager,
+            PhysicsSystem& physSystem
         );
 
         void OnImGuiRender();
@@ -45,6 +48,7 @@ namespace Lengine {
         void DrawSaveOrCancelPopup();
         void HandleAssetEditorClear();
 
+        PhysicsSystem& physSystem;
     };
 
 }

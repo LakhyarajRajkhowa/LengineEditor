@@ -20,6 +20,7 @@ int main(int argc, char* argv[])
         engine.getRenderSettings(),
         engine.getRuntimeStats(),
         engine.getRenderPipeline(),
+        engine.getPhysicsSystem(),
         engine.isRunning()
     );
     editor.init();
