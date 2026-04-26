@@ -19,7 +19,6 @@
 #include "panels/EnvironmentPanel.h"
 
 #include "MainMenuBar.h"
-#include "EditorManipulation.h"
 
 #include "graphics/geometry/ray.h"
 #include "graphics/Gizmos.h"
@@ -45,23 +44,18 @@ namespace Lengine {
         ~EditorLayer() = default;
 
         void OnAttach();
-        void OnImGuiRender(const uint32_t& finalImage, HDREnvironment& hdrSkybox);
+        void OnImGuiRender(const uint32_t& finalImage, HDREnvironment& hdrSkybox, EditorMode& mode);
         void OnDetach();
 
         ViewportPanel& GetViewportPanel() { return viewportPanel; }
         PerformancePanel& GetPerformancePanel() { return performancePanel; }
         
-        EditorMode mode = EditorMode::EDIT;
 
     private:
-        // Selection state
-        Entity* selectedEntity = nullptr;
-        Entity* hoveredEntity = nullptr;
 
         bool layoutInitialized = false;
 
-
-        void BeginDockspace();
+        void BeginDockspace(EditorMode& mode);
         void SetupDefaultLayout();
 
     private:

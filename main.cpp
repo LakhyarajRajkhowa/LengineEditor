@@ -8,6 +8,9 @@
 
 int main(int argc, char* argv[])
 {
+    EditorMode mode = EditorMode::EDIT;
+
+
     Lengine::EngineCore engine;
     engine.initSystems();
 
@@ -23,14 +26,14 @@ int main(int argc, char* argv[])
         engine.getPhysicsSystem(),
         engine.isRunning()
     );
-    editor.init();
+    editor.Init();
 
     while (engine.isRunning())
     {
 
-        editor.run();
+        editor.run(mode);
 
-        engine.run();
+        engine.run(mode);
 
 
         engine.presentFrame();

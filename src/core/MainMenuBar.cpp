@@ -19,10 +19,14 @@ void MainMenuBar::DrawMainToolbar(EditorMode& mode)
         // PLAY / STOP
         if (ImGui::Button(mode == EditorMode::EDIT ? "Play" : "Stop"))
         {
-            if (mode == EditorMode::EDIT)
-                mode = EditorMode::PLAY;
-            else
+            if (mode == EditorMode::EDIT) {
+                mode = EditorMode::PLAY; 
+                sceneManager.CreateRuntimeScene();
+            }
+            else {
                 mode = EditorMode::EDIT;
+                sceneManager.GetRuntimeScene().reset();
+            }
         }
 
         ImGui::SameLine();

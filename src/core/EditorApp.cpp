@@ -51,9 +51,9 @@ namespace Lengine {
     {
     }
 
-    void Editor::init()
+    void Editor::Init()
     {
-        editorCamera.init(
+        editorCamera.Init(
             &inputManager
         );
         redirect = new OutputRedirect(logBuffer);
@@ -69,19 +69,22 @@ namespace Lengine {
        
     }
 
-    void Editor::run()
+    void Editor::run(EditorMode& mode)
     {
-
 
         imguiLayer.beginFrame();
 
-        Scene* activeScene = sceneManager.getActiveScene();
+        Scene* activeScene = sceneManager.GetActiveScene(mode);
 
         RenderContext ctx;
         ctx.scene = activeScene;
         ctx.settings = &renderSettings;
 
-        if (editorLayer.mode == EditorMode::EDIT) {
+        if (mode == EditorMode::EDIT) {
+
+           runtimeStats.frameStats =  LimitFPS(runtimeStats.targetFPS, runtimeStats.limitFPS);
+
+
             ctx.cameraView = editorCamera.getViewMatrix();
             ctx.cameraProjection = editorCamera.getProjectionMatrix();
             ctx.cameraPos = editorCamera.getCameraPosition();
@@ -89,9 +92,9 @@ namespace Lengine {
 
             int mx, my;
             SDL_GetRelativeMouseState(&mx, &my);
-            editorCamera.Update(runtimeStats.frameStats.deltaTime, { mx, my });
+            editorCamera.Update(runtimeStats.frameStats.deltaTime,  { mx, my });
         }
-        else if (editorLayer.mode == EditorMode::PLAY) {
+        else if (mode == EditorMode::PLAY) {
             UUID camID = activeScene->Cameras().GetPrimaryCameraID();
 
             glm::mat4 camView = glm::mat4(1.0f);
@@ -99,6 +102,7 @@ namespace Lengine {
             glm::vec3 camPos = glm::vec3(1.0f);
 
             if (camID != UUID::Null && activeScene->Transforms().Has(camID)) {
+
                 camView = activeScene->Transforms().Get(camID).getViewMatrix();
                 camProj = activeScene->Cameras().GetPrimaryCamera()->projection;
                 camPos = activeScene->Transforms().Get(camID).GetWorldPosition();
@@ -116,7 +120,7 @@ namespace Lengine {
         editorOverlays.RenderGizmoGrid(ctx, renderPipeline.GetFinalFramebuffer());
      //   editorOverlays.RenderPhysicsCollider(ctx, renderPipeline.GetFinalFramebuffer());
 
-        editorLayer.OnImGuiRender(renderPipeline.GetFinalImage(), renderPipeline.GetHDRSkybox());
+        editorLayer.OnImGuiRender(renderPipeline.GetFinalImage(), renderPipeline.GetHDRSkybox(), mode);
 
         assetManager.drawLoadingScreens();
         assetManager.drawImportingScreens();

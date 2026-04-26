@@ -8,7 +8,7 @@
 namespace Lengine {
 
 	struct GizmoArrows {
-		Submesh* gizmoArrow = nullptr;
+		Mesh* gizmoArrow = nullptr;
 		GLSLProgram gizmoArrowShader;
 		glm::vec3 axis;
 		glm::vec4 color;
@@ -39,7 +39,7 @@ namespace Lengine {
 	private:
 		AssetManager& assetManager;
 
-		Submesh* gizmoGrid = nullptr;
+		Mesh* gizmoGrid = nullptr;
 		GLSLProgram gizmoGridShader;
 
 		

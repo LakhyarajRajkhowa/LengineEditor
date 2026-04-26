@@ -2,7 +2,6 @@
 
 #include <external/json.hpp>
 
-#include "core/Lengine.h"
 #include "core/Timer.h"
 #include "core/settings.h"
 #include "core/EventSystem.h"
@@ -88,8 +87,8 @@ namespace Lengine {
             bool& isRunning
         );
 
-        void init();
-        void run();
+        void Init();
+        void run(EditorMode& mode);
         void shutdown();
 
     private:

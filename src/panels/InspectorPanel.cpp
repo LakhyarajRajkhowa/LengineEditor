@@ -176,7 +176,7 @@ void InspectorPanel::DrawMaterialEditor(const UUID& id)
 
 void InspectorPanel::DrawEntityMaterialEditor(const UUID& entityID)
 {
-    MeshRenderer& mr = sceneManager.getActiveScene()->MeshRenderers().Get(entityID);
+    MeshRenderer& mr = sceneManager.GetEditorScene()->MeshRenderers().Get(entityID);
     MaterialInstance& inst = mr.inst;
 
     if (inst.baseMaterial == UUID::Null)
@@ -401,7 +401,7 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
         return;
     }
 
-    Scene* scene = sceneManager.getActiveScene();
+    Scene* scene = sceneManager.GetEditorScene();
     Entity* entity = scene->getEntityByID(entityID);
 
     NameTagComponentStorage& NameTags = scene->NameTags();
@@ -417,7 +417,7 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
     
     // ---------------- NAME ----------------
 
-    auto& tag = NameTags.Get(entity->getID());
+    auto& tag = NameTags.Get(*entity);
 
     char buffer[256] = {};
     strcpy_s(buffer, sizeof(buffer), tag.name.c_str());
@@ -431,9 +431,9 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
 
     // ----- TRANSFORM -----
 
-    if (transforms.Has(entity->getID()))
+    if (transforms.Has(*entity))
     {
-        auto& tr = transforms.Get(entity->getID());
+        auto& tr = transforms.Get(*entity);
 
         if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
 
@@ -553,7 +553,7 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
 
         if (ImGui::Button("Add Transform Component", buttonSize))
         {
-            scene->Transforms().Add(entity->getID());
+            scene->Transforms().Add(*entity);
         }
 
         ImGui::Separator();
@@ -566,7 +566,7 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
     // ---------------- MESH BLOCK ----------------
 
     if (scene->MeshFilters().Has(entityID)) {
-        MeshFilter& mf = scene->MeshFilters().Get(entity->getID());
+        MeshFilter& mf = scene->MeshFilters().Get(*entity);
 
         if (ImGui::CollapsingHeader("Mesh Filter", ImGuiTreeNodeFlags_DefaultOpen)) {
 
@@ -575,10 +575,10 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
 
             // Mesh name string
             std::string submeshName = "None";
-            const UUID& submeshID = mf.submeshID;
+            const UUID& meshID = mf.meshID;
 
-            if (!submeshID.isNull() && !mf.HasPendingSubmesh() ) {
-                const AssetMetadata* submeshMetaData = assets.GetAssetMetaData(mf.submeshID);
+            if (!meshID.isNull() && !mf.HasPendingSubmesh() ) {
+                const AssetMetadata* submeshMetaData = assets.GetAssetMetaData(mf.meshID);
                 submeshName = submeshMetaData ? submeshMetaData->name : "Invalid Submesh";
             }
             ImGui::Button((submeshName + "##Submesh").c_str(), buttonSize);
@@ -593,10 +593,10 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
                     UUID droppedID = data->id;
 
                     if (assets.assetStates[droppedID] == AssetState::Loaded) {
-                        mf.submeshID = droppedID;
+                        mf.meshID = droppedID;
                     }
                     else {
-                        assets.RequestSubmeshLoad(droppedID, entity->getID());
+                        assets.RequestSubmeshLoad(droppedID, *entity);
                         mf.RequestSubmesh(droppedID);
                     }
 
@@ -613,7 +613,7 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
         ImGui::Separator();
 
         if (ImGui::Button("Add Mesh Filter Component", buttonSize)) {
-            scene->MeshFilters().Add(entity->getID());
+            scene->MeshFilters().Add(*entity);
         }
 
         ImGui::Separator();
@@ -622,7 +622,7 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
 
 
     if (scene->MeshRenderers().Has(entityID)) {
-        MeshRenderer& mr = scene->MeshRenderers().Get(entity->getID());
+        MeshRenderer& mr = scene->MeshRenderers().Get(*entity);
 
 
         if (ImGui::CollapsingHeader("Mesh Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -685,9 +685,9 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
     }
 
    
-    if (scene->Lights().Has(entity->getID()))
+    if (scene->Lights().Has(*entity))
     {
-        auto& light = scene->Lights().Get(entity->getID());
+        auto& light = scene->Lights().Get(*entity);
 
         if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
 
@@ -786,7 +786,7 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
             // ---------------- Remove ----------------
             if (ImGui::Button("Remove Light Component"))
             {
-                scene->Lights().Remove(entity->getID());
+                scene->Lights().Remove(*entity);
             }
 
             ImGui::Spacing();
@@ -801,7 +801,7 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
 
         if (ImGui::Button("Add Light Component", buttonSize))
         {
-            scene->Lights().Add(entity->getID());
+            scene->Lights().Add(*entity);
         }
 
         ImGui::Separator();
@@ -899,9 +899,9 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
 
     // ------ CAMERA COMPONENT -----
 
-    if (scene->Cameras().Has(entity->getID()))
+    if (scene->Cameras().Has(*entity))
     {
-        auto& editorCamera = scene->Cameras().Get(entity->getID());
+        auto& editorCamera = scene->Cameras().Get(*entity);
 
         if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
         {
@@ -999,12 +999,12 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
             ImGui::Spacing();
 
            
-            bool isPrimary = scene->Cameras().GetPrimaryCameraID() == entity->getID();
+            bool isPrimary = scene->Cameras().GetPrimaryCameraID() == *entity;
 
             if (ImGui::Checkbox("Primary Camera", &isPrimary))
             {
                 if (isPrimary)
-                    scene->Cameras().SetPrimaryCamera(entity->getID());
+                    scene->Cameras().SetPrimaryCamera(*entity);
                 else
                     scene->Cameras().SetPrimaryCamera(UUID::Null);
             }
@@ -1014,7 +1014,7 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
             // ---------------- Remove ----------------
             if (ImGui::Button("Remove Camera Component"))
             {
-                scene->Cameras().Remove(entity->getID());
+                scene->Cameras().Remove(*entity);
             }
 
             ImGui::Spacing();
@@ -1027,7 +1027,7 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
 
         if (ImGui::Button("Add Camera Component", buttonSize))
         {
-            auto& cam = scene->Cameras().Add(entity->getID());
+            auto& cam = scene->Cameras().Add(*entity);
             cam.recalculateProjection();
         }
 
@@ -1037,9 +1037,9 @@ void InspectorPanel::DrawEntityInspector(const UUID& entityID)
 
     // ----- RIGIDBODY -----
 
-    if (rigidbodies.Has(entity->getID()))
+    if (rigidbodies.Has(*entity))
     {
-        auto& rb = rigidbodies.Get(entity->getID());
+        auto& rb = rigidbodies.Get(*entity);
 
         if (ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen))
         {

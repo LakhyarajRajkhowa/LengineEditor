@@ -3,7 +3,7 @@
 #include "core/Paths.h"
 
 using namespace Lengine;
-void ImGuiLayer::init(SDL_Window* window, SDL_GLContext glContext) {
+void ImGuiLayer::Init(SDL_Window* window, SDL_GLContext glContext) {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); 

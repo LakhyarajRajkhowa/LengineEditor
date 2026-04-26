@@ -32,7 +32,8 @@ namespace Lengine {
         rendererSettingsPanel(rndrSett),
         performancePanel(stats_),
         viewportPanel(window, cam, scnMgr),
-        physSystem(physSystem)
+        physSystem(physSystem),
+        mainMenuBar(scnMgr)
     {
 
     }
@@ -45,9 +46,9 @@ namespace Lengine {
         // cleanup if you want later
     }
     
-    void EditorLayer::OnImGuiRender(const uint32_t& finalImage, HDREnvironment& hdrSkybox) {
+    void EditorLayer::OnImGuiRender(const uint32_t& finalImage, HDREnvironment& hdrSkybox, EditorMode& mode) {
 
-        BeginDockspace();
+        BeginDockspace(mode);
 
 
 
@@ -73,7 +74,7 @@ namespace Lengine {
 
  
     // Dockspace
-    void EditorLayer::BeginDockspace()
+    void EditorLayer::BeginDockspace(EditorMode& mode)
     {
         ImGuiWindowFlags window_flags =
             ImGuiWindowFlags_NoDocking |

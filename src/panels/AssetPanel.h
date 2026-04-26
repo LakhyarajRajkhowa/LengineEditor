@@ -29,7 +29,7 @@ namespace Lengine {
     {
         Root,       // showing folders
         Prefab,
-        Submesh,
+        Mesh,
         Texture,
         PhongMaterial
     };

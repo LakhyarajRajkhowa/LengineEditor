@@ -22,9 +22,9 @@ namespace Lengine {
 			inputManager(inputMgr),
 			isRunning(run)
 		{
-			init(window, glContext);
+			Init(window, glContext);
 		};
-		void init(SDL_Window* window, SDL_GLContext glContext);
+		void Init(SDL_Window* window, SDL_GLContext glContext);
 		void shutdown();
 		// process event and return true if ImGui consumed it (optional)
 		void processEvent(const SDL_Event& e);

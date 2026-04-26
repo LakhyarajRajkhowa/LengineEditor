@@ -163,12 +163,12 @@ using namespace Lengine;
 
    void ViewportPanel::DrawTransformGizmo()
 {
-    if (!EditorSelection::GetEntity() || !sceneManager.getActiveScene())
+    if (!EditorSelection::GetEntity() || !sceneManager.GetEditorScene())
         return;
 
     UUID selectedEntity = EditorSelection::GetEntity();
 
-    auto* scene = sceneManager.getActiveScene();
+    auto* scene = sceneManager.GetEditorScene();
 
     if (!scene->Transforms().Has(selectedEntity))
         return;

@@ -44,7 +44,7 @@ void AssetPanel::OnImGuiRender()
     if (s_CurrentView == AssetFolderView::Root)
     {
         DrawAssetTypeFolder("Prefab", folderIcon, AssetFolderView::Prefab);
-        DrawAssetTypeFolder("SubMesh", folderIcon, AssetFolderView::Submesh);
+        DrawAssetTypeFolder("SubMesh", folderIcon, AssetFolderView::Mesh);
         DrawAssetTypeFolder("Texture", folderIcon, AssetFolderView::Texture);
         DrawAssetTypeFolder("Material", folderIcon, AssetFolderView::PhongMaterial);
     }
@@ -54,7 +54,7 @@ void AssetPanel::OnImGuiRender()
 
         switch (s_CurrentView)
         {
-        case AssetFolderView::Submesh:
+        case AssetFolderView::Mesh:
             DrawSubMeshAssets();
             break;
         case AssetFolderView::Prefab:
@@ -435,7 +435,7 @@ void AssetPanel::DrawTextureAssets()
 
         // Draw thumbnail
         ImGui::SetCursorScreenPos(min);
-        ImGui::Image(materialIcon, { THUMBNAIL_SIZE, THUMBNAIL_SIZE });
+        ImGui::Image(textureIcon, { THUMBNAIL_SIZE, THUMBNAIL_SIZE });
 
         // Draw label
         ImGui::SetCursorScreenPos({
