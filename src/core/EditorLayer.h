@@ -5,10 +5,8 @@
 #include "external/imgui/imgui.h"
 #include "external/imgui/imgui_internal.h"
 
-#include "scene/Scene.h"
-#include "scene/SceneManager.h"
-#include "platform/KeyBindings.h"
-
+// Editor
+#include "MainMenuBar.h"
 #include "panels/ViewportPanel.h"
 #include "panels/SceneHeirarchyPanel.h"
 #include "panels/InspectorPanel.h"
@@ -18,13 +16,17 @@
 #include "panels/RendererSettingsPanel.h"
 #include "panels/EnvironmentPanel.h"
 
-#include "MainMenuBar.h"
-
+// Engine
+#include "scene/Scene.h"
+#include "scene/SceneManager.h"
 #include "graphics/geometry/ray.h"
 #include "graphics/Gizmos.h"
+#include "input/InputRouter.h"   
+#include "input/KeyBindings.h"
+
 
 namespace Lengine {
-   
+
 
 
     class EditorLayer {
@@ -39,17 +41,25 @@ namespace Lengine {
             AssetManager& assetManager,
             RenderSettings& rndrSett,
             RuntimeStats& stats,
-            PhysicsSystem& physSystem
-            );
+            PhysicsSystem& physSystem,
+            InputRouter& inputRouter,
+            ScriptSystem& scriptSystem
+        );
         ~EditorLayer() = default;
 
         void OnAttach();
-        void OnImGuiRender(const uint32_t& finalImage, HDREnvironment& hdrSkybox, EditorMode& mode);
+        void OnImGuiRender(
+            const uint32_t& finalImage,
+            const uint32_t& gbufferImage,
+            HDREnvironment& hdrSkybox,
+            EditorMode& mode
+        );
         void OnDetach();
 
         ViewportPanel& GetViewportPanel() { return viewportPanel; }
         PerformancePanel& GetPerformancePanel() { return performancePanel; }
-        
+        MainMenuBar& GetMainMenuBar() { return mainMenuBar; }
+
 
     private:
 
@@ -61,6 +71,7 @@ namespace Lengine {
     private:
         // Panels
         ViewportPanel viewportPanel;
+        ViewportPanel testViewport;
         SceneHierarchyPanel hierarchyPanel;
         InspectorPanel inspectorPanel;
         ConsolePanel consolePanel;
@@ -79,8 +90,10 @@ namespace Lengine {
         InputManager& inputManager;
         AssetManager& assetManager;
         RenderSettings& renderSettings;
+        ScriptSystem& scriptSystem;
 
         PhysicsSystem& physSystem;
+        InputRouter& inputRouter;   // NEW
     };
 
 }

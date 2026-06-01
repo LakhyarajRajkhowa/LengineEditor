@@ -1,5 +1,7 @@
 #include "PhysicsDebugRenderer.h"
 
+using namespace Lengine;
+
 std::vector<DebugDraw::DebugLine> DebugDraw::lines;
 
 void DebugDraw::Init() {

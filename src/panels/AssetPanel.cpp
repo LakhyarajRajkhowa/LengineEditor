@@ -9,17 +9,18 @@ namespace fs = std::filesystem;
 
 using namespace Lengine;
 
-AssetPanel::AssetPanel(const fs::path& root, AssetManager& asstMgr)
+AssetPanel::AssetPanel(const fs::path& root, AssetManager& asstMgr, ScriptSystem& scriptSys)
     : m_RootPath(root), m_CurrentPath(root),
-    assetManager(asstMgr)
+    assetManager(asstMgr),
+    scriptSystem(scriptSys)
 {
-
     meshIcon = LoadThumbnail(Paths::Icons + "mesh_icon.png");
     prefabIcon = LoadThumbnail(Paths::Icons + "prefab_icon.png");
     submeshIcon = LoadThumbnail(Paths::Icons + "submesh_icon.png");
     textureIcon = LoadThumbnail(Paths::Icons + "texture_icon.png");
     materialIcon = LoadThumbnail(Paths::Icons + "material_icon.png");
-
+    folderIcon = LoadThumbnail(Paths::Icons + "folder_icon.png");
+    scriptIcon = LoadThumbnail(Paths::Icons + "script_icon.png");  
 }
 
 static AssetFolderView s_CurrentView = AssetFolderView::Root;
@@ -29,9 +30,6 @@ static bool openCreateMaterialPopup = false;
 
 void AssetPanel::OnImGuiRender()
 {
-    // for some "mysterious" reason only the folder_icon.png is not loading properly in the constructor
-    // although any other image with the same name loads properly but i want this exact png image!
-    folderIcon = LoadThumbnail(Paths::Icons + "folder_icon.png");
 
     ImGui::Begin("Assets");
 
@@ -47,25 +45,18 @@ void AssetPanel::OnImGuiRender()
         DrawAssetTypeFolder("SubMesh", folderIcon, AssetFolderView::Mesh);
         DrawAssetTypeFolder("Texture", folderIcon, AssetFolderView::Texture);
         DrawAssetTypeFolder("Material", folderIcon, AssetFolderView::PhongMaterial);
+        DrawAssetTypeFolder("Scripts", folderIcon, AssetFolderView::Script); 
     }
     else
     {
         DrawBackButton();
-
         switch (s_CurrentView)
         {
-        case AssetFolderView::Mesh:
-            DrawSubMeshAssets();
-            break;
-        case AssetFolderView::Prefab:
-            DrawPrefabAssets();
-            break;
-        case AssetFolderView::Texture:
-            DrawTextureAssets();
-            break;
-        case AssetFolderView::PhongMaterial:
-            DrawPbrMaterialAssets();
-            break;
+        case AssetFolderView::Mesh:          DrawSubMeshAssets();     break;
+        case AssetFolderView::Prefab:        DrawPrefabAssets();      break;
+        case AssetFolderView::Texture:       DrawTextureAssets();     break;
+        case AssetFolderView::PhongMaterial: DrawPbrMaterialAssets(); break;
+        case AssetFolderView::Script:        DrawScriptAssets();      break;  
         }
     }
 
@@ -255,6 +246,8 @@ void AssetPanel::DrawSubMeshAssets()
                 &payload,
                 sizeof(payload)
             );
+            ImGui::Image(submeshIcon, { 32, 32 });  
+            ImGui::SameLine();
             ImGui::Text("%s", asset.name.c_str());
             ImGui::EndDragDropSource();
         }
@@ -345,6 +338,8 @@ void AssetPanel::DrawPbrMaterialAssets()
                 &payload,
                 sizeof(payload)
             );
+            ImGui::Image(materialIcon, { 32, 32 });   
+            ImGui::SameLine();
             ImGui::Text("%s", asset.name.c_str());
             ImGui::EndDragDropSource();
         }
@@ -425,6 +420,8 @@ void AssetPanel::DrawTextureAssets()
                 &payload,
                 sizeof(payload)
             );
+            ImGui::Image(textureIcon, { 32, 32 });  
+            ImGui::SameLine();
             ImGui::Text("%s", asset.name.c_str());
             ImGui::EndDragDropSource();
         }
@@ -537,6 +534,63 @@ void AssetPanel::DrawPrefabAssets()
     ImGui::Columns(1);
 
 
+}
+
+void AssetPanel::DrawScriptAssets()
+{
+    const auto& metadata = scriptSystem.GetLibrary().GetAllMetadata();
+
+    if (metadata.empty())
+    {
+        ImGui::TextDisabled("No scripts registered.");
+        return;
+    }
+
+    for (int i = 0; i < (int)metadata.size(); i++)
+    {
+        const auto& m = metadata[i];
+
+        ImGui::PushID(i);
+
+        ImVec2 itemSize = {
+            THUMBNAIL_SIZE,
+            THUMBNAIL_SIZE + ImGui::GetTextLineHeightWithSpacing()
+        };
+
+        bool clicked = ImGui::InvisibleButton("##script_item", itemSize);
+
+        // --- Drag & Drop ---
+        if (ImGui::BeginDragDropSource())
+        {
+            ScriptDragPayload payload{};
+            strncpy_s(payload.name, m.name.c_str(), sizeof(payload.name) - 1);
+            strncpy_s(payload.sourceFile, m.sourceFile.c_str(), sizeof(payload.sourceFile) - 1);
+
+            ImGui::SetDragDropPayload("SCRIPT_ASSET", &payload, sizeof(payload));
+            ImGui::Image(scriptIcon, { 32, 32 });
+            ImGui::SameLine();
+            ImGui::Text("%s", m.name.c_str());
+            ImGui::EndDragDropSource();
+        }
+
+        // --- Draw visuals ON TOP of invisible button ---
+        ImVec2 min = ImGui::GetItemRectMin();
+
+        ImGui::SetCursorScreenPos(min);
+        ImGui::Image(scriptIcon, { THUMBNAIL_SIZE, THUMBNAIL_SIZE });
+
+        ImGui::SetCursorScreenPos({ min.x, min.y + THUMBNAIL_SIZE });
+        ImGui::TextWrapped("%s", m.name.c_str());
+
+        // --- Click ---
+        if (clicked)
+        {
+            // TODO: open script in editor / show in inspector
+        }
+
+        ImGui::NextColumn();
+        ImGui::PopID();
+    }
 }
 void AssetPanel::DrawCreateMaterialPopup()
 {

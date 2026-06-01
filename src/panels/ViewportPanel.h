@@ -9,26 +9,28 @@
 #include <imgui/backends/imgui_impl_sdl2.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
-#include "external/ImGuizmo.h"
-
+// Editor
 #include "EditorSelection.h"
 
+// Engine
 #include "graphics/camera/Camera3d.h"
 #include "graphics/frameBuffers/Framebuffer.h"
-
-
 #include "utils/fps.h"
 #include "utils/imGuiScreens.h"
-
 #include "scene/SceneManager.h"
-
 #include "platform/Window.h"
+#include "input/InputRouter.h"
+#include "input/InputContext.h"
+#include "external/ImGuizmo.h"
+
+
+
+
 
 
 
 namespace Lengine {
-
-
+    enum class ViewportType { READ_ONLY, INTERACT };
 
     enum class ViewportMode {
         first = 0,
@@ -40,10 +42,20 @@ namespace Lengine {
     class ViewportPanel {
     public:
         
-        ViewportPanel(Window& window, Camera3d& camera_, SceneManager& scene_) :
+        ViewportPanel(
+            const std::string name,
+            const ViewportType type,
+            Window& window,
+            Camera3d& camera_,
+            SceneManager& scene_,
+            InputRouter& router_          
+        ) :
             window(window),
             editorCamera(camera_),
-            sceneManager(scene_)
+            sceneManager(scene_),
+            inputRouter(router_),        
+            viewportName(name),
+            type(type)
         {}
 
        
@@ -62,16 +74,21 @@ namespace Lengine {
         ImVec2 getMousePosInViewport() const { return mouseInViewport; }
         ImVec2 getMousePosInImage() const { return mouseInImage; }
 
+
+
         bool fixCamera = false;
-        bool viewportFullscreen = true;
+        bool viewportFullscreen = false;
 
     public:
         void DrawTransformGizmo();
         
     private:
+        std::string viewportName;
+        ViewportType type = ViewportType::READ_ONLY;
         Window& window;
         Camera3d& editorCamera;
         SceneManager& sceneManager;
+        InputRouter& inputRouter;
 
         float fullscreenAspectRatio = 16.0f / 9.0f;
 

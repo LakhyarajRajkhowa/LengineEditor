@@ -2,13 +2,14 @@
 
 #define SDL_MAIN_HANDLED
 
-
-#include "core/EngineCore.h"
+// Engine
 #include "core/EditorApp.h"
+
+// Editor
+#include "core/EngineCore.h"
 
 int main(int argc, char* argv[])
 {
-    EditorMode mode = EditorMode::EDIT;
 
 
     Lengine::EngineCore engine;
@@ -17,13 +18,14 @@ int main(int argc, char* argv[])
     Lengine::Editor editor(
         engine.getWindow(),
         engine.getInputManager(),
-        engine.getEventSystem(),
         engine.getAssetManager(),
         engine.getSceneManager(),
         engine.getRenderSettings(),
         engine.getRuntimeStats(),
         engine.getRenderPipeline(),
         engine.getPhysicsSystem(),
+        engine.getScriptSystem(),
+        engine.getInputRouter(),
         engine.isRunning()
     );
     editor.Init();
@@ -31,9 +33,9 @@ int main(int argc, char* argv[])
     while (engine.isRunning())
     {
 
-        editor.run(mode);
+        editor.run();
 
-        engine.run(mode);
+        engine.run(editor.getMode());
 
 
         engine.presentFrame();

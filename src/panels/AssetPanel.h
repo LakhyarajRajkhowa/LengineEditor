@@ -1,13 +1,18 @@
 #pragma once
+
 #include <filesystem>
 #include <string>
 #include <vector>
 
-#include "utils/UUID.h"
-#include "resources/AssetManager.h"
+// Editor
 #include "EditorSelection.h"
 
+// Engine
+#include "utils/UUID.h"
+#include "resources/AssetManager.h"
 #include "external/tinyfiledialogs.h"
+#include "scripting/ScriptSystem.h"
+
 namespace Lengine {
     struct MeshDragPayload
     {
@@ -25,18 +30,24 @@ namespace Lengine {
         char path[512];
     };
 
+    struct ScriptDragPayload
+    {
+        char name[64];        
+        char sourceFile[256]; 
+    };
     enum class AssetFolderView
     {
         Root,       // showing folders
         Prefab,
         Mesh,
         Texture,
-        PhongMaterial
+        PhongMaterial,
+        Script
     };
 
     class AssetPanel {
     public:
-        AssetPanel(const std::filesystem::path& root, AssetManager& assetMgr);
+        AssetPanel(const fs::path& root, AssetManager& asstMgr, ScriptSystem& scriptSys);
 
         void OnImGuiRender();
 
@@ -63,11 +74,15 @@ namespace Lengine {
         void DrawPbrMaterialAssets();
         void DrawTextureAssets();
         void DrawPrefabAssets();
+        void DrawScriptAssets();
+
 
 
 
     private:
         AssetManager& assetManager;
+        ScriptSystem& scriptSystem;
+
 
         std::unordered_map<std::string, ImTextureID> thumbnailCache;
 
@@ -92,6 +107,7 @@ namespace Lengine {
         ImTextureID submeshIcon = 0;
         ImTextureID textureIcon = 0;
         ImTextureID materialIcon = 0;
+        ImTextureID scriptIcon = 0;
 
 
 

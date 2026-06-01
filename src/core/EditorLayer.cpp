@@ -15,7 +15,9 @@ namespace Lengine {
         AssetManager& assetMgr,
         RenderSettings& rndrSett,
         RuntimeStats& stats_,
-        PhysicsSystem& physSystem
+        PhysicsSystem& physSystem,
+        InputRouter& router,
+        ScriptSystem& scriptSystem
     )
         :
         window(window),
@@ -24,14 +26,18 @@ namespace Lengine {
         gizmoRenderer(gizmoRndr),
         inputManager(inputMgr),
         assetManager(assetMgr),
-        renderSettings(rndrSett), 
-        hierarchyPanel(scnMgr,assetMgr),
-        inspectorPanel(scnMgr, assetMgr, physSystem),
+        renderSettings(rndrSett),
+        inputRouter(router),
+        scriptSystem(scriptSystem),
+        hierarchyPanel(scnMgr, assetMgr),
+        inspectorPanel(scnMgr, assetMgr, physSystem, scriptSystem),
         consolePanel(buffer),
-        assetPanel(Paths::ActiveGameFolder, assetMgr),
+        assetPanel(Paths::ActiveGameFolder, assetMgr, scriptSystem),
         rendererSettingsPanel(rndrSett),
         performancePanel(stats_),
-        viewportPanel(window, cam, scnMgr),
+        // Pass inputRouter to both viewports
+        viewportPanel("Main Viewport", ViewportType::INTERACT, window, cam, scnMgr, router),
+        testViewport("Test Viewport", ViewportType::READ_ONLY, window, cam, scnMgr, router),
         physSystem(physSystem),
         mainMenuBar(scnMgr)
     {
@@ -45,8 +51,13 @@ namespace Lengine {
     void EditorLayer::OnDetach() {
         // cleanup if you want later
     }
-    
-    void EditorLayer::OnImGuiRender(const uint32_t& finalImage, HDREnvironment& hdrSkybox, EditorMode& mode) {
+
+    void EditorLayer::OnImGuiRender(
+        const uint32_t& finalImage,
+        const uint32_t& gbufferImage,
+        HDREnvironment& hdrSkybox,
+        EditorMode& mode
+    ) {
 
         BeginDockspace(mode);
 
@@ -56,6 +67,7 @@ namespace Lengine {
         if (!viewportPanel.viewportFullscreen) {
 
             viewportPanel.OnImGuiRender(finalImage);
+            testViewport.OnImGuiRender(gbufferImage);
             hierarchyPanel.OnImGuiRender();
             inspectorPanel.OnImGuiRender();
             consolePanel.OnImGuiRender();
@@ -72,7 +84,7 @@ namespace Lengine {
 
     }
 
- 
+
     // Dockspace
     void EditorLayer::BeginDockspace(EditorMode& mode)
     {
@@ -107,7 +119,7 @@ namespace Lengine {
         ImGui::End();
     }
 
-    
+
     // Default Layout 
     void EditorLayer::SetupDefaultLayout() {
 

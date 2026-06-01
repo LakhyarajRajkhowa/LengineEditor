@@ -14,6 +14,18 @@ void RendererSettingsPanel::OnImGuiRender()
 
 
     ImGui::SliderFloat("Exposure", &m_Settings.exposure, 0.01f, 5.0f);
+    if (ImGui::Button(
+        m_Settings.renderPath == RenderPath::Forward
+        ? "Render Path: Forward"
+        : "Render Path: Deferred"))
+    {
+        if (m_Settings.renderPath == RenderPath::Forward)
+            m_Settings.renderPath = RenderPath::Deferred;
+        else
+            m_Settings.renderPath = RenderPath::Forward;
+
+        m_Settings.needsReload = true;
+    }
 
     if (ImGui::Button(m_Settings.enableBloom ? "Bloom: ON" : "Bloom: OFF")) {
         m_Settings.enableBloom = !m_Settings.enableBloom;

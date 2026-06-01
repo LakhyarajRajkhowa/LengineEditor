@@ -3,13 +3,17 @@
 #include <vector>
 #include <string>
 #include <queue>
+
+// Editor
+#include "EditorSelection.h"
+
+// Engine
 #include "graphics/camera/Camera3d.h"
 #include "scene/Scene.h"
 #include "scene/SceneManager.h"
 #include "resources/AssetManager.h"
 #include "external/tinyfiledialogs.h"
 
-#include "EditorSelection.h"
 
 namespace Lengine {
     
@@ -23,7 +27,7 @@ namespace Lengine {
         );
 
         void OnImGuiRender();
-        void DrawEntityNode(Scene* scene, Entity* entity, Scene* activeScene);
+        void DrawEntityNode(Scene* scene, Entity entity, Scene* activeScene);
         void createNewModel();
         void drawCreateScenePopup();
         void drawRenameScenePopup();
@@ -31,8 +35,8 @@ namespace Lengine {
         SceneManager& sceneManager;
         AssetManager& assetManager;
     private:
-        std::queue<UUID> deletedEntityQueue;
-        std::queue<std::pair<Entity*, UUID>> createdEntityQueue;
+        std::queue<Entity> deletedEntityQueue;
+        std::queue<Entity> createdEntityQueue;
 
         Scene* activeScene;
     };

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "utils/UUID.h"
+// Engine
+#include "scene/Entity.h"
 #include "assets/AssetRegistry.h"
 
 namespace Lengine {
@@ -28,30 +29,30 @@ namespace Lengine {
             s_SelectedAsset.first = UUID::Null;
         }
 
-        static void SetEntity(UUID id)
+        static void SetEntity(Entity id)
         {
             s_SelectedEntity = id;
         }
 
-        static UUID GetEntity()
+        static Entity GetEntity()
         {
             return s_SelectedEntity;
         }
 
         static bool HasEntity()
         {
-            return s_SelectedEntity != UUID::Null;
+            return s_SelectedEntity != NullEntity;
         }
 
         static void ClearEntitySelection()
         {
-            s_SelectedEntity = UUID::Null;
+            s_SelectedEntity = NullEntity;
         }
 
     private:
         static inline std::pair<UUID , AssetType> s_SelectedAsset = std::pair(UUID::Null, AssetType::Unknown);
         static bool isAssetSaved;
-        static inline UUID s_SelectedEntity = UUID::Null;
+        static inline Entity s_SelectedEntity = NullEntity;
     };
 
 

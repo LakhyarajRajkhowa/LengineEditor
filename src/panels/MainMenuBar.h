@@ -3,6 +3,7 @@
 #include <fstream>
 #include <filesystem>
 
+// Engine
 #include "core/settings.h"
 #include "scene/SceneManager.h"
 
@@ -12,6 +13,7 @@ namespace Lengine {
     public:
         MainMenuBar(SceneManager& sceneManager) :sceneManager(sceneManager) {}
         void OnImGuiRender(EditorMode& mode);
+        std::function<void()> onPlayToggle;
     private:
         SceneManager& sceneManager;
         void DrawMainToolbar(EditorMode& mode);

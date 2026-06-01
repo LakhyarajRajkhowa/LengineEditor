@@ -5,27 +5,29 @@ namespace Lengine {
     Editor::Editor(
         Window& window,
         InputManager& inputManager,
-        EventSystem& eventSystem,
         AssetManager& assetManager,
         SceneManager& sceneManager,
         RenderSettings& renderSettings,
         RuntimeStats& runtimeStats,
         RenderPipeline& renderPipeline,
         PhysicsSystem& physSystem,
+        ScriptSystem& scriptSystem,
+        InputRouter& inputRouter,
         bool& isRunning
     )
         :
 
         window(window),
         inputManager(inputManager),
-        eventSystem(eventSystem),
         assetManager(assetManager),
         sceneManager(sceneManager),
         renderSettings(renderSettings),
         runtimeStats(runtimeStats),
         renderPipeline(renderPipeline),
         isRunning(isRunning),
-
+        physSystem(physSystem),
+        scriptSystem(scriptSystem),
+        inputRouter(inputRouter),
         imguiLayer(
             inputManager,
             isRunning,
@@ -43,13 +45,14 @@ namespace Lengine {
             assetManager,
             renderSettings,
             runtimeStats,
-            physSystem
+            physSystem,
+            inputRouter,
+            scriptSystem
         ),
-        physSystem(physSystem)
-
-
-    {
-    }
+        uiHandler(imguiLayer),
+        editorCameraHandler(editorCamera, inputRouter),
+        gameHandler(sceneManager)
+    {}
 
     void Editor::Init()
     {
@@ -58,18 +61,29 @@ namespace Lengine {
         );
         redirect = new OutputRedirect(logBuffer);
 
-        eventSystem.addListener(
-            [this](const SDL_Event& e)
-            {
-                imguiLayer.processEvent(e);
+        editorLayer.GetMainMenuBar().onPlayToggle = [this]() {
+            if (mode == EditorMode::EDIT) {
+                pressPlay();            
+                mode = EditorMode::PLAY;
+
             }
-        );
+            else {
+                pressStop();           
+                mode = EditorMode::EDIT;
+
+            }
+            };
+        inputRouter.setGameHandler(&gameHandler);
+        inputRouter.setEditorHandler(&editorCameraHandler);
+        inputRouter.setUIHandler(&uiHandler);
+        inputRouter.setContext(InputContext::UI);
+        
 
         editorOverlays.InitGizmos();
-       
+
     }
 
-    void Editor::run(EditorMode& mode)
+    void Editor::run()
     {
 
         imguiLayer.beginFrame();
@@ -82,45 +96,47 @@ namespace Lengine {
 
         if (mode == EditorMode::EDIT) {
 
-           runtimeStats.frameStats =  LimitFPS(runtimeStats.targetFPS, runtimeStats.limitFPS);
-
 
             ctx.cameraView = editorCamera.getViewMatrix();
             ctx.cameraProjection = editorCamera.getProjectionMatrix();
             ctx.cameraPos = editorCamera.getCameraPosition();
 
+            editorCamera.updateViewMatrix();
 
-            int mx, my;
-            SDL_GetRelativeMouseState(&mx, &my);
-            editorCamera.Update(runtimeStats.frameStats.deltaTime,  { mx, my });
         }
         else if (mode == EditorMode::PLAY) {
-            UUID camID = activeScene->Cameras().GetPrimaryCameraID();
+            const Entity& camID = activeScene->GetPrimaryCamera();
 
             glm::mat4 camView = glm::mat4(1.0f);
             glm::mat4 camProj = glm::mat4(1.0f);
             glm::vec3 camPos = glm::vec3(1.0f);
 
-            if (camID != UUID::Null && activeScene->Transforms().Has(camID)) {
+            if (camID != NullEntity && activeScene->GetRegistry().transforms.Has(camID)) {
 
-                camView = activeScene->Transforms().Get(camID).getViewMatrix();
-                camProj = activeScene->Cameras().GetPrimaryCamera()->projection;
-                camPos = activeScene->Transforms().Get(camID).GetWorldPosition();
+                const CameraComponent& cam = activeScene->GetRegistry().cameras.Get(camID);
+
+                camView = activeScene->GetRegistry().transforms.Get(camID).getViewMatrix();
+                camProj = cam.projection;
+                camPos = activeScene->GetRegistry().transforms.Get(camID).GetWorldPosition();
             }
-          
+
             ctx.cameraView = camView;
             ctx.cameraProjection = camProj;
             ctx.cameraPos = camPos;
         }
 
 
-        
+
         renderPipeline.Render(ctx);
 
         editorOverlays.RenderGizmoGrid(ctx, renderPipeline.GetFinalFramebuffer());
-     //   editorOverlays.RenderPhysicsCollider(ctx, renderPipeline.GetFinalFramebuffer());
+        // editorOverlays.RenderPhysicsCollider(ctx, renderPipeline.GetFinalFramebuffer());
 
-        editorLayer.OnImGuiRender(renderPipeline.GetFinalImage(), renderPipeline.GetHDRSkybox(), mode);
+        editorLayer.OnImGuiRender(
+            renderPipeline.GetFinalImage(),
+            renderPipeline.GetGbufferNormal(),
+            renderPipeline.GetHDRSkybox(),
+            mode);
 
         assetManager.drawLoadingScreens();
         assetManager.drawImportingScreens();
@@ -134,6 +150,22 @@ namespace Lengine {
 
         if (redirect)
             delete redirect;
+    }
+
+    void Editor::pressPlay()
+    {
+
+        sceneManager.CreateRuntimeScene();
+
+        scriptSystem.OnCreate();
+    }
+
+    void Editor::pressStop()
+    {
+        scriptSystem.OnDestroy();
+
+        sceneManager.GetRuntimeScene().reset();
+
     }
 
 }

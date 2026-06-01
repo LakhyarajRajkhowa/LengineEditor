@@ -8,7 +8,7 @@
 #include <imgui/backends/imgui_impl_opengl3.h>
 
 #include "external/ImGuizmo.h"
-#include "platform/InputManager.h"
+#include "input/InputManager.h"
 
 namespace Lengine {
 	class ImGuiLayer {

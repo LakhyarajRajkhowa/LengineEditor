@@ -40,7 +40,7 @@ namespace Lengine {
 		AssetManager& assetManager;
 
 		Mesh* gizmoGrid = nullptr;
-		GLSLProgram gizmoGridShader;
+		std::shared_ptr<GLSLProgram> gizmoGridShader = nullptr;
 
 		
 		void initGizmoGrid();

@@ -52,12 +52,12 @@ void SceneHierarchyPanel::OnImGuiRender() {
     // Root node
     if (rootOpen)
     {
-        for (Scene* scene : allScenes)
+        for (auto& scene : allScenes)
         {
             
             // Highlight active scene
             ImGuiTreeNodeFlags flags =
-                (scene == activeScene ? ImGuiTreeNodeFlags_DefaultOpen : 0);
+                (scene.get() == activeScene ? ImGuiTreeNodeFlags_DefaultOpen : 0);
 
             bool sceneOpen = ImGui::TreeNodeEx(
                 scene->getName().c_str(),
@@ -69,11 +69,14 @@ void SceneHierarchyPanel::OnImGuiRender() {
             // --- RIGHT CLICK MENU FOR SCENE ---
             if (ImGui::BeginPopupContextItem(scene->getName().c_str()))
             {
-                if (ImGui::MenuItem("Set Active"))
-                    sceneManager.setActiveScene(scene);
+                if (ImGui::MenuItem("Set Active")) {
+                    sceneManager.setActiveScene(scene.get());
+                    EditorSelection::ClearEntitySelection();
+                    
+                }
 
                 
-                if (scene == activeScene) {
+                if (scene.get() == activeScene) {
                     if (ImGui::MenuItem("Save Scene")) {
                         assetManager.saveScene(*scene, Paths::GameScenes);
                         //assetManager.saveSceneAssetRegistryForScene(*scene, Paths::GameAssetRegistryFolder);
@@ -87,7 +90,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
                 if (ImGui::MenuItem("Rename Scene"))
                 {
-                    sceneToRename = scene;
+                    sceneToRename = scene.get();
                     strncpy_s(RenameSceneBuffer,
                         scene->getName().c_str(),
                         IM_ARRAYSIZE(RenameSceneBuffer));
@@ -116,7 +119,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
                 // Create Queued Entities
                 while (!createdEntityQueue.empty()) {
-                    scene->DuplicateHierarchy(createdEntityQueue.front().second);
+                    scene->DuplicateHierarchy(createdEntityQueue.front());
 
                     createdEntityQueue.pop();
                 }
@@ -124,12 +127,12 @@ void SceneHierarchyPanel::OnImGuiRender() {
                 // ----- ENTITIES -----
                 for (auto& entityID : scene->GetRootEntities())
                 {
-                    Entity* entity = scene->getEntityByID(entityID);
+                    Entity entity = entityID;
 
-                    if (scene == activeScene)
-                        DrawEntityNode(scene, entity, activeScene);
+                    if (scene.get() == activeScene)
+                        DrawEntityNode(scene.get(), entity, activeScene);
                     else
-                        ImGui::Text("%s", scene->NameTags().Get(*entity).name.c_str());
+                        ImGui::Text("%s", scene->GetRegistry().nameTags.Get(entity).name.c_str());
                 }
 
 
@@ -150,34 +153,37 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
 }
 
-void SceneHierarchyPanel::DrawEntityNode(Scene* scene, Entity* entity, Scene* activeScene)
+void SceneHierarchyPanel::DrawEntityNode(Scene* scene, Entity entity, Scene* activeScene)
 {
+    if (!entity)
+        return;
+
     ImGuiTreeNodeFlags flags =
         ImGuiTreeNodeFlags_OpenOnArrow |
         ImGuiTreeNodeFlags_SpanFullWidth;
 
     bool isSelected =
         EditorSelection::HasEntity() &&
-        EditorSelection::GetEntity() == *entity;
+        EditorSelection::GetEntity() == entity;
 
     if (isSelected)
         flags |= ImGuiTreeNodeFlags_Selected;
 
     // Leaf node?
-    if (!scene->HasChildren(*entity))
+    if (!scene->HasChildren(entity))
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-    ImGui::PushID((int)*entity);
+    ImGui::PushID((int)entity);
 
     bool opened = ImGui::TreeNodeEx(
-        scene->NameTags().Get(*entity).name.c_str(),
+        scene->GetRegistry().nameTags.Get(entity).name.c_str(),
         flags
     );
 
     // ---- Selection ----
     if (ImGui::IsItemClicked())
     {
-        EditorSelection::SetEntity(*entity);
+        EditorSelection::SetEntity(entity);
         EditorSelection::ClearAssetSelection();
     }
 
@@ -186,13 +192,12 @@ void SceneHierarchyPanel::DrawEntityNode(Scene* scene, Entity* entity, Scene* ac
     {
         if (ImGui::MenuItem("Create Copy"))
         {
-            Entity* clone = new Entity(UUID());
-            createdEntityQueue.push({ clone, *entity });
+            createdEntityQueue.push(entity);
         }
 
         if (ImGui::MenuItem("Delete"))
         {
-            deletedEntityQueue.push(*entity);
+            deletedEntityQueue.push(entity);
             if (isSelected)
                 EditorSelection::ClearEntitySelection();
         }
@@ -201,12 +206,11 @@ void SceneHierarchyPanel::DrawEntityNode(Scene* scene, Entity* entity, Scene* ac
     }
 
     // ---- Children ----
-    if (opened && scene->HasChildren(*entity))
+    if (opened && scene->HasChildren(entity))
     {
-        for (UUID childID : scene->GetChildren(*entity))
+        for (Entity childID : scene->GetChildren(entity))
         {
-            Entity* child = scene->getEntityByID(childID);
-            DrawEntityNode(scene, child, activeScene);
+            DrawEntityNode(scene, childID, activeScene);
         }
 
         ImGui::TreePop();
@@ -236,9 +240,8 @@ void SceneHierarchyPanel::createNewModel() {
             if (strlen(EntityName) > 0) {
                 // Convert index to EntityType enum
 
-                Entity* newEntity = activeScene->createEntity_root(
-                    EntityName,
-                    UUID()       
+                Entity newEntity = activeScene->createEntity_root(
+                    EntityName    
                 );
 
                 ImGui::CloseCurrentPopup();
@@ -264,23 +267,37 @@ void SceneHierarchyPanel::drawCreateScenePopup()
         openCreateScenePopup = false;
     }
 
-    if (ImGui::BeginPopupModal("Create New Scene", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    if (ImGui::BeginPopupModal(
+        "Create New Scene",
+        NULL,
+        ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::Text("Scene Name");
-        ImGui::InputText("##SceneName", NewSceneName, IM_ARRAYSIZE(NewSceneName));
+
+        ImGui::InputText(
+            "##SceneName",
+            NewSceneName,
+            IM_ARRAYSIZE(NewSceneName));
+
         ImGui::Separator();
 
         if (ImGui::Button("Create", ImVec2(120, 0)))
         {
             if (strlen(NewSceneName) > 0)
             {
-                Scene* newScene =
-                    assetManager.createScene(NewSceneName, Paths::GameScenes);
+                auto newScene =
+                    assetManager.createScene(
+                        NewSceneName,
+                        Paths::GameScenes);
 
-                sceneManager.getScenes().insert(newScene);
-                sceneManager.setActiveScene(newScene);
+                Scene* scenePtr = newScene.get();
+
+                sceneManager.getScenes().push_back(
+                    std::move(newScene));
+
 
                 strcpy_s(NewSceneName, "NewScene");
+
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -295,7 +312,6 @@ void SceneHierarchyPanel::drawCreateScenePopup()
         ImGui::EndPopup();
     }
 }
-
 void SceneHierarchyPanel::drawRenameScenePopup()
 {
     if (openRenameScenePopup)

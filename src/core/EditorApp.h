@@ -2,21 +2,29 @@
 
 #include <external/json.hpp>
 
+// Editor 
+#include "EditorLayer.h"
+#include "EditorCameraHandler.h"
+#include "UIHandler.h"
+#include "imgui/ImguiLayer.h"
+#include "graphics/PhysicsDebugRenderer.h"
+
+// Engine 
 #include "core/Timer.h"
 #include "core/settings.h"
 #include "core/EventSystem.h"
-
 #include "graphics/camera/Camera3d.h"
 #include "graphics/renderer/RenderPipeline.h"
 #include "graphics/renderer/PostProcess/PostProcessing.h"
-
-#include "platform/InputManager.h"
 #include "platform/Window.h"
+#include "input/InputContext.h"
+#include "input/InputRouter.h"
+#include "input/PlayerInputHandler.h"
+#include "scripting/ScriptSystem.h"
 
-#include "imgui/ImguiLayer.h"
-#include "EditorLayer.h"
 
-#include "graphics/PhysicsDebugRenderer.h"
+
+
 
 namespace Lengine {
     class EditorOverlayPass
@@ -77,30 +85,41 @@ namespace Lengine {
         Editor(
             Window& window,
             InputManager& inputManager,
-            EventSystem& eventSystem,
             AssetManager& assetManager,
             SceneManager& sceneManager,
             RenderSettings& renderSettings,
             RuntimeStats& runtimeStats,
             RenderPipeline& renderPipeline,
             PhysicsSystem& physSystem,
+            ScriptSystem& scriptSystem,
+            InputRouter& inputRouter,
             bool& isRunning
         );
 
+        EditorMode getMode() const { return mode; }
+
         void Init();
-        void run(EditorMode& mode);
+        void run();
         void shutdown();
+
+        void pressPlay();
+        void pressStop();
+
 
     private:
 
         Window& window;
         InputManager& inputManager;
-        EventSystem& eventSystem;
         AssetManager& assetManager;
         SceneManager& sceneManager;
         RenderSettings& renderSettings;
         RuntimeStats& runtimeStats;
         RenderPipeline& renderPipeline;
+        InputRouter & inputRouter;
+        
+        PlayerInputHandler gameHandler;
+        EditorCameraHandler editorCameraHandler;
+        UIHandler           uiHandler;
 
         bool& isRunning;
 
@@ -115,7 +134,9 @@ namespace Lengine {
         EditorOverlayPass editorOverlays;
 
         PhysicsSystem& physSystem;
+        ScriptSystem& scriptSystem;
     
+        EditorMode mode = EditorMode::EDIT;
     };
 
    

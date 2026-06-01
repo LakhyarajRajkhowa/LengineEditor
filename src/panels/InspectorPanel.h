@@ -1,13 +1,13 @@
 #pragma once
 #include <imgui.h>
 
+// Editor
 #include "AssetPanel.h"
-
-#include "scene/Scene.h"
-#include "scene/SceneManager.h"
-
 #include "EditorSelection.h"
 
+// Engine
+#include "scene/Scene.h"
+#include "scene/SceneManager.h"
 #include "physics/PhysicsSystem.h"
 namespace Lengine {
 
@@ -21,23 +21,23 @@ namespace Lengine {
         InspectorPanel(
             SceneManager& sceneManager,
             AssetManager& assetManager,
-            PhysicsSystem& physSystem
+            PhysicsSystem& physSystem,
+            ScriptSystem& scrSystem
         );
 
         void OnImGuiRender();
 
 
     private:
-
-        void DrawEntityInspector(const UUID& entityID);
-        void DrawAssetInspector(const std::pair<UUID, AssetType>& asset);
-
-        void DrawMaterialEditor(const UUID& materialID);
-        void DrawEntityMaterialEditor(const UUID& entityID);
-
-
         SceneManager& sceneManager;
         AssetManager& assets;
+        PhysicsSystem& physSystem;
+        ScriptSystem& scriptSystem;
+
+        void DrawEntityInspector(const Entity& entityID);
+        void DrawAssetInspector(const std::pair<UUID, AssetType>& asset);
+        void DrawMaterialEditor(const UUID& materialID);
+        void DrawEntityMaterialEditor(const Entity& entityID);
 
         InspectorState inspectorState;
 
@@ -48,7 +48,16 @@ namespace Lengine {
         void DrawSaveOrCancelPopup();
         void HandleAssetEditorClear();
 
-        PhysicsSystem& physSystem;
+        void DrawAddComponentMenu(
+            const Entity& entityID,
+            const Entity& entity,
+            Registry& registry,
+            Scene* scene);
+        void DrawScriptComponent(const Entity& entityID, Registry& registry);
+
+
+
+
     };
 
 }
