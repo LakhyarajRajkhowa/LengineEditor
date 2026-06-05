@@ -35,8 +35,6 @@ namespace Lengine {
         SceneManager& sceneManager;
         AssetManager& assetManager;
     private:
-        std::queue<Entity> deletedEntityQueue;
-        std::queue<Entity> createdEntityQueue;
 
         Scene* activeScene;
     };

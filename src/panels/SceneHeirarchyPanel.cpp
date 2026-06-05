@@ -111,18 +111,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
             // --- ENTITIES UNDER THAT SCENE ---
             if (sceneOpen)
             {
-                // Delete Queued Entitities
-                while (!deletedEntityQueue.empty()) {
-                    scene->RemoveEntityRecursive(deletedEntityQueue.front());
-                    deletedEntityQueue.pop();
-                }
-
-                // Create Queued Entities
-                while (!createdEntityQueue.empty()) {
-                    scene->DuplicateHierarchy(createdEntityQueue.front());
-
-                    createdEntityQueue.pop();
-                }
+               
 
                 // ----- ENTITIES -----
                 for (auto& entityID : scene->GetRootEntities())
@@ -192,14 +181,16 @@ void SceneHierarchyPanel::DrawEntityNode(Scene* scene, Entity entity, Scene* act
     {
         if (ImGui::MenuItem("Create Copy"))
         {
-            createdEntityQueue.push(entity);
+            scene->DuplicateHierarchy(entity);
         }
 
         if (ImGui::MenuItem("Delete"))
         {
-            deletedEntityQueue.push(entity);
             if (isSelected)
                 EditorSelection::ClearEntitySelection();
+
+            scene->DestroyEntity(entity);
+
         }
 
         ImGui::EndPopup();
@@ -240,7 +231,7 @@ void SceneHierarchyPanel::createNewModel() {
             if (strlen(EntityName) > 0) {
                 // Convert index to EntityType enum
 
-                Entity newEntity = activeScene->createEntity_root(
+                Entity newEntity = activeScene->CreateEntity_root(
                     EntityName    
                 );
 

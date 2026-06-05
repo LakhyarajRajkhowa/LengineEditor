@@ -40,6 +40,9 @@ namespace Lengine {
         void InitGizmos() {
             gizmos.InitGizmo();
         }
+        void InitPhysicsDebugRenderer() {
+            colliderRenderer.Init();
+        }
         GizmoRenderer& getGizmos() { return gizmos; }
         PhysicsDebugRenderer& getPhysicsDebugRenderer() { return colliderRenderer; }
 
@@ -64,6 +67,17 @@ namespace Lengine {
 
             colliderRenderer.Render(ctx);
 
+            glEnable(GL_CULL_FACE);
+
+            target.Unbind();
+        }
+
+        void RenderPhysicsColliderFromComponents(RenderContext& ctx, Framebuffer& target, Scene& scene)
+        {
+            target.Bind();
+
+            glDisable(GL_CULL_FACE);
+            colliderRenderer.RenderFromComponents(ctx, scene);
             glEnable(GL_CULL_FACE);
 
             target.Unbind();

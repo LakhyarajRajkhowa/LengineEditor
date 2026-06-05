@@ -80,6 +80,7 @@ namespace Lengine {
         
 
         editorOverlays.InitGizmos();
+        editorOverlays.InitPhysicsDebugRenderer();
 
     }
 
@@ -130,7 +131,11 @@ namespace Lengine {
         renderPipeline.Render(ctx);
 
         editorOverlays.RenderGizmoGrid(ctx, renderPipeline.GetFinalFramebuffer());
-        // editorOverlays.RenderPhysicsCollider(ctx, renderPipeline.GetFinalFramebuffer());
+
+        if (mode == EditorMode::EDIT)
+            editorOverlays.RenderPhysicsColliderFromComponents(ctx, renderPipeline.GetFinalFramebuffer(), *activeScene);
+        else
+            editorOverlays.RenderPhysicsCollider(ctx, renderPipeline.GetFinalFramebuffer());
 
         editorLayer.OnImGuiRender(
             renderPipeline.GetFinalImage(),
@@ -157,14 +162,21 @@ namespace Lengine {
 
         sceneManager.CreateRuntimeScene();
 
+        auto& runtimeScene = sceneManager.GetRuntimeScene();
+
+        physSystem.InitForScene(*runtimeScene);
         scriptSystem.OnCreate();
     }
 
     void Editor::pressStop()
     {
-        scriptSystem.OnDestroy();
+        auto& editorScene = *sceneManager.GetEditorScene();
 
+        scriptSystem.OnDestroy();
         sceneManager.GetRuntimeScene().reset();
+
+        physSystem.InitForScene(editorScene);
+
 
     }
 

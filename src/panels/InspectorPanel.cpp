@@ -135,6 +135,19 @@ void InspectorPanel::DrawMaterialEditor(const UUID& id)
     DrawFloat("Metallic", mat->metallic, 0.01f, 0.0f, 1.0f);
     DrawFloat("Roughness", mat->roughness, 0.01f, 0.0f, 1.0f);
     DrawFloat("Normal Strength", mat->normalStrength, 0.1f, -100.0f, 100.0f);
+    DrawFloat("Opacity", mat->opacity, 0.01f, 0.0f, 1.0f);
+
+    ImGui::Spacing();
+    if (ImGui::Checkbox("Transparent", &mat->isTransparent))
+    {
+        mat->localDirty = true;
+    }
+    ImGui::SameLine();
+    ImGui::TextDisabled("(Routes object through transparent pass)");
+    ImGui::Spacing();
+
+    ImGui::Separator();
+
 
     ImGui::Separator();
 
@@ -296,6 +309,18 @@ void InspectorPanel::DrawEntityMaterialEditor(const Entity& entityID)
     DrawFloatOverride("Metallic", baseMat->metallic, inst.metallic, 0.01f, 0.0f, 1.0f);
     DrawFloatOverride("Roughness", baseMat->roughness, inst.roughness, 0.01f, 0.0f, 1.0f);
     DrawFloatOverride("Normal Strength", baseMat->normalStrength, inst.normalStrength, 0.1f, -100.0f, 100.0f);
+    DrawFloatOverride("Opacity", baseMat->opacity, inst.opacity, 0.01f, 0.0f, 1.0f);
+
+    ImGui::Spacing();
+    ImGui::BeginDisabled(true);
+    bool transparentDisplay = baseMat->isTransparent;
+    ImGui::Checkbox("Transparent", &transparentDisplay);
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    ImGui::TextDisabled("(Set on base material)");
+    ImGui::Spacing();
+
+    ImGui::Separator();
 
     ImGui::Separator();
 
@@ -655,26 +680,95 @@ void InspectorPanel::DrawEntityInspector(const Entity& entityID)
 
         if (ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen))
         {
+            // --- Mass ---
             ImGui::Text("Mass");
             ImGui::SameLine();
             if (ImGui::Button("Reset##mass"))
-                rb.mass = 1.0f;
-            ImGui::DragFloat("##Mass", &rb.mass, 0.1f, 0.01f, 1000.0f);
-            ImGui::Checkbox("Use Gravity", &rb.useGravity);
-            ImGui::Checkbox("Is Kinematic", &rb.isKinematic);
+                physSystem.SetMass(entity, 1.0f);
+
+            float mass = rb.mass;
+            if (ImGui::DragFloat("##Mass", &mass, 0.1f, 0.01f, 1000.0f))
+                physSystem.SetMass(entity, mass);
+
             ImGui::Spacing();
-            if (ImGui::Button("Remove Rigidbody")) {
-                physSystem.DeleteRigidBody(entityID, registry.colliders);
-                registry.rigidBodies.Remove(entityID);
-            }
+
+            // --- Flags ---
+            bool useGravity = rb.useGravity;
+            bool isKinematic = rb.isKinematic;
+
+            if (ImGui::Checkbox("Use Gravity", &useGravity))
+                physSystem.SetGravityEnabled(entity, useGravity);
+
+            if (ImGui::Checkbox("Is Kinematic", &isKinematic))
+                physSystem.SetKinematic(entity, isKinematic);
+
+            ImGui::Spacing();
+
+            // --- Damping ---
+            ImGui::Text("Damping");
+
+            float linearDamping = rb.linearDamping;
+            float angularDamping = rb.angularDamping;
+
+            ImGui::Text("Linear");
+            ImGui::SameLine();
+            if (ImGui::Button("Reset##lindamp"))
+                physSystem.SetLinearDamping(entity, 0.1f);
+            if (ImGui::DragFloat("##LinearDamping", &linearDamping, 0.01f, 0.0f, 10.0f))
+                physSystem.SetLinearDamping(entity, linearDamping);
+
+            ImGui::Text("Angular");
+            ImGui::SameLine();
+            if (ImGui::Button("Reset##angdamp"))
+                physSystem.SetAngularDamping(entity, 0.05f);
+            if (ImGui::DragFloat("##AngularDamping", &angularDamping, 0.01f, 0.0f, 10.0f))
+                physSystem.SetAngularDamping(entity, angularDamping);
+
+            ImGui::Spacing();
+
+            // --- Linear Axis Locks ---
+            ImGui::Text("Freeze Position");
+
+            bool lx = rb.lockLinearX;
+            bool ly = rb.lockLinearY;
+            bool lz = rb.lockLinearZ;
+
+            bool linearChanged = false;
+            linearChanged |= ImGui::Checkbox("X##linX", &lx); ImGui::SameLine();
+            linearChanged |= ImGui::Checkbox("Y##linY", &ly); ImGui::SameLine();
+            linearChanged |= ImGui::Checkbox("Z##linZ", &lz);
+
+            if (linearChanged)
+                physSystem.SetLinearLock(entity, lx, ly, lz);
+
+            // --- Angular Axis Locks ---
+            ImGui::Text("Freeze Rotation");
+
+            bool ax = rb.lockAngularX;
+            bool ay = rb.lockAngularY;
+            bool az = rb.lockAngularZ;
+
+            bool angularChanged = false;
+            angularChanged |= ImGui::Checkbox("X##angX", &ax); ImGui::SameLine();
+            angularChanged |= ImGui::Checkbox("Y##angY", &ay); ImGui::SameLine();
+            angularChanged |= ImGui::Checkbox("Z##angZ", &az);
+
+            if (angularChanged)
+                physSystem.SetAngularLock(entity, ax, ay, az);
+
+            ImGui::Spacing();
+
+            // --- Remove ---
+            if (ImGui::Button("Remove Rigidbody"))
+                registry.rigidBodies.Remove(entity);
         }
     }
 
     // ---------------- COLLIDER ----------------
 
-    if (registry.colliders.Has(entityID))
+    if (registry.colliders.Has(entity))
     {
-        auto& col = registry.colliders.Get(entityID);
+        auto& col = registry.colliders.Get(entity);
 
         if (ImGui::CollapsingHeader("Collider", ImGuiTreeNodeFlags_DefaultOpen))
         {
@@ -688,7 +782,8 @@ void InspectorPanel::DrawEntityInspector(const Entity& entityID)
                     const char* colliderTypes[] = { "Box", "Sphere", "Capsule" };
                     int currentType = (int)shape.type;
 
-                    if (ImGui::Combo("Type", &currentType, colliderTypes, IM_ARRAYSIZE(colliderTypes))) {
+                    if (ImGui::Combo("Type", &currentType, colliderTypes, IM_ARRAYSIZE(colliderTypes)))
+                    {
                         shape.type = (ColliderShape::Type)currentType;
                         shape.dirty = true;
                     }
@@ -701,7 +796,8 @@ void InspectorPanel::DrawEntityInspector(const Entity& entityID)
                         if (ImGui::DragFloat("Radius", &shape.radius, 0.05f))
                             shape.dirty = true;
 
-                    if (shape.type == ColliderShape::Type::Capsule) {
+                    if (shape.type == ColliderShape::Type::Capsule)
+                    {
                         if (ImGui::DragFloat("Radius", &shape.radius, 0.05f))
                             shape.dirty = true;
                         if (ImGui::DragFloat("Height", &shape.height, 0.05f))
@@ -712,8 +808,13 @@ void InspectorPanel::DrawEntityInspector(const Entity& entityID)
                         shape.dirty = true;
 
                     ImGui::Spacing();
-                    if (ImGui::Button("Delete Shape")) {
-                        physSystem.DeleteColliderShape(entityID, col, i);
+
+                    if (ImGui::Button("Delete Shape"))
+                    {
+                        // DeleteColliderShape is still a direct call — it targets a
+                        // specific shape slot by index, which the hook system has no
+                        // way to express. Fine to call immediately from the editor.
+                        physSystem.DeleteColliderShape(entity, col, i);
                         ImGui::TreePop();
                         ImGui::PopID();
                         break;
@@ -726,26 +827,31 @@ void InspectorPanel::DrawEntityInspector(const Entity& entityID)
             }
 
             ImGui::Spacing();
+
+            // Adding individual shapes to an existing collider is also a direct
+            // call — the hook only fires when the whole ColliderComponent is
+            // added/removed, not when a shape is pushed into an existing one.
             if (ImGui::Button("Add Box"))
-                physSystem.AddCollider(entityID, col, ColliderShape::Type::Box);
+                physSystem.AddCollider(entity, col, ColliderShape::Type::Box);
             ImGui::SameLine();
             if (ImGui::Button("Add Sphere"))
-                physSystem.AddCollider(entityID, col, ColliderShape::Type::Sphere);
+                physSystem.AddCollider(entity, col, ColliderShape::Type::Sphere);
             ImGui::SameLine();
             if (ImGui::Button("Add Capsule"))
-                physSystem.AddCollider(entityID, col, ColliderShape::Type::Capsule);
+                physSystem.AddCollider(entity, col, ColliderShape::Type::Capsule);
 
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Spacing();
 
-            if (ImGui::Button("Delete Collider Component")) {
-                physSystem.DeleteCollider(entityID, col);
-                registry.colliders.Remove(entityID);
+            if (ImGui::Button("Delete Collider Component"))
+            {
+                // Same as rigidbody — removing from registry fires onRemove,
+                // which queues the full collider teardown. No manual phys call needed.
+                registry.colliders.Remove(entity);
             }
         }
     }
-
     // ---------------- CONTROLLER ----------------
 
     if (registry.controllers.Has(entity))
@@ -971,8 +1077,6 @@ void InspectorPanel::DrawAddComponentMenu(
             {
                 if (registry.transforms.Has(entityID)) {
                     registry.rigidBodies.Add(entityID);
-                    physSystem.AddRigidbody(entityID,
-                        registry.rigidBodies.Get(entityID));
                 }
                 // silently ignored if no Transform — 
                 // optionally: ImGui::SetTooltip(...)
