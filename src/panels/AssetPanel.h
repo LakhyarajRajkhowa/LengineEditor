@@ -29,6 +29,16 @@ namespace Lengine {
         UUID id;
         char path[512];
     };
+    struct BoneMaskDragPayload
+    {
+        UUID id;
+        char path[512];
+    };
+    struct SkeletonDragPayload
+    {
+        UUID id;
+        char path[512];
+    };
 
     struct ScriptDragPayload
     {
@@ -42,7 +52,9 @@ namespace Lengine {
         Mesh,
         Texture,
         PhongMaterial,
-        Script
+        Script,
+        Skeleton,
+        BoneMask
     };
 
     class AssetPanel {
@@ -59,6 +71,8 @@ namespace Lengine {
         void OpenImportPrefabDialog(std::string folderpath);
 
         void DrawCreateMaterialPopup();
+        void DrawCreateBoneMaskPopup();
+
         void CreateNewFolder(const std::filesystem::path& path);
 
         ImTextureID LoadThumbnail(const std::string& file);
@@ -75,6 +89,9 @@ namespace Lengine {
         void DrawTextureAssets();
         void DrawPrefabAssets();
         void DrawScriptAssets();
+        void DrawSkeletonAssets();
+        void DrawBoneMaskAssets();
+
 
 
 
@@ -108,6 +125,9 @@ namespace Lengine {
         ImTextureID textureIcon = 0;
         ImTextureID materialIcon = 0;
         ImTextureID scriptIcon = 0;
+        ImTextureID skeletonIcon = 0;
+        ImTextureID boneMaskIcon = 0;
+
 
 
 

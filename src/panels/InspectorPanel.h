@@ -37,6 +37,7 @@ namespace Lengine {
         void DrawEntityInspector(const Entity& entityID);
         void DrawAssetInspector(const std::pair<UUID, AssetType>& asset);
         void DrawMaterialEditor(const UUID& materialID);
+        void DrawBoneMaskEditor(const UUID& materialID);
         void DrawEntityMaterialEditor(const Entity& entityID);
 
         InspectorState inspectorState;

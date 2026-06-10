@@ -21,11 +21,17 @@ AssetPanel::AssetPanel(const fs::path& root, AssetManager& asstMgr, ScriptSystem
     materialIcon = LoadThumbnail(Paths::Icons + "material_icon.png");
     folderIcon = LoadThumbnail(Paths::Icons + "folder_icon.png");
     scriptIcon = LoadThumbnail(Paths::Icons + "script_icon.png");  
+    skeletonIcon = LoadThumbnail(Paths::Icons + "skeleton_icon.png");
+    boneMaskIcon = LoadThumbnail(Paths::Icons + "bone_mask_icon.jpg");
+
 }
 
 static AssetFolderView s_CurrentView = AssetFolderView::Root;
 static char NewMaterialName[128] = "NewMatrial";
 static bool openCreateMaterialPopup = false;
+static char NewBoneMaskName[128] = "NewBoneMask";
+static bool openCreateBoneMaskPopup = false;
+
 
 
 void AssetPanel::OnImGuiRender()
@@ -46,6 +52,8 @@ void AssetPanel::OnImGuiRender()
         DrawAssetTypeFolder("Texture", folderIcon, AssetFolderView::Texture);
         DrawAssetTypeFolder("Material", folderIcon, AssetFolderView::PhongMaterial);
         DrawAssetTypeFolder("Scripts", folderIcon, AssetFolderView::Script); 
+        DrawAssetTypeFolder("Skeleton", folderIcon, AssetFolderView::Skeleton);
+        DrawAssetTypeFolder("Bone Mask", folderIcon, AssetFolderView::BoneMask);
     }
     else
     {
@@ -56,7 +64,9 @@ void AssetPanel::OnImGuiRender()
         case AssetFolderView::Prefab:        DrawPrefabAssets();      break;
         case AssetFolderView::Texture:       DrawTextureAssets();     break;
         case AssetFolderView::PhongMaterial: DrawPbrMaterialAssets(); break;
-        case AssetFolderView::Script:        DrawScriptAssets();      break;  
+        case AssetFolderView::Script:        DrawScriptAssets();      break;
+        case AssetFolderView::Skeleton:      DrawSkeletonAssets();      break;
+        case AssetFolderView::BoneMask:      DrawBoneMaskAssets();      break;
         }
     }
 
@@ -64,6 +74,8 @@ void AssetPanel::OnImGuiRender()
     ImGui::End();
 
     DrawCreateMaterialPopup();
+    DrawCreateBoneMaskPopup();
+
 
 }
 
@@ -363,7 +375,162 @@ void AssetPanel::DrawPbrMaterialAssets()
         if (clicked)
         {
             // TODO: store selected asset UUID
+            EditorSelection::ClearAssetSelection();
             EditorSelection::SetAsset(std::pair(asset.uuid, AssetType::Material));
+
+        }
+
+        ImGui::NextColumn();
+        ImGui::PopID();
+    }
+}
+
+void AssetPanel::DrawSkeletonAssets()
+{
+
+    auto assets = assetManager.GetAllSkeletonsFromDatabase();
+
+   
+    if (assets.empty())
+    {
+        ImGui::TextDisabled("No skeleton assets imported.");
+        return;
+    }
+
+    for (const auto& asset : assets)
+    {
+        // UUID = uin64 but pushID = int(32) so...
+        ImGui::PushID((void*)(uintptr_t)asset.uuid);
+
+        // --- Define clickable region ---
+        ImVec2 itemSize = {
+            THUMBNAIL_SIZE,
+            THUMBNAIL_SIZE + ImGui::GetTextLineHeightWithSpacing()
+        };
+
+        bool clicked = ImGui::InvisibleButton("##skeleton_item", itemSize);
+
+        // --- Drag & Drop ---
+        if (ImGui::BeginDragDropSource())
+        {
+            SkeletonDragPayload payload{};
+            payload.id = asset.uuid;
+
+            ImGui::SetDragDropPayload(
+                "SKELETON_ASSET",
+                &payload,
+                sizeof(payload)
+            );
+            ImGui::Image(skeletonIcon, { 32, 32 });
+            ImGui::SameLine();
+            ImGui::Text("%s", asset.name.c_str());
+            ImGui::EndDragDropSource();
+        }
+
+        // --- Draw visuals ON TOP of invisible button ---
+        ImVec2 min = ImGui::GetItemRectMin();
+        ImVec2 max = ImGui::GetItemRectMax();
+
+        // Draw thumbnail
+        ImGui::SetCursorScreenPos(min);
+        ImGui::Image(skeletonIcon, { THUMBNAIL_SIZE, THUMBNAIL_SIZE });
+
+        // Draw label
+        ImGui::SetCursorScreenPos({
+            min.x,
+            min.y + THUMBNAIL_SIZE
+            });
+        ImGui::TextWrapped("%s", asset.name.c_str());
+
+        // --- Handle click ---
+        if (clicked)
+        {
+            // TODO: store selected asset UUID
+            EditorSelection::ClearAssetSelection();
+            EditorSelection::SetAsset(std::pair(asset.uuid, AssetType::Skeleton));
+        }
+
+        ImGui::NextColumn();
+        ImGui::PopID();
+    }
+}
+
+
+void AssetPanel::DrawBoneMaskAssets()
+{
+
+    auto assets = assetManager.GetAllBoneMasksFromDatabase();
+
+    // Right click to import material inside this folder only
+    if (ImGui::BeginPopupContextWindow("DirContextMenu", ImGuiPopupFlags_MouseButtonRight))
+    {
+        
+        if (ImGui::MenuItem("Create New Bone Mask")) {
+            openCreateBoneMaskPopup = true;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+
+    if (assets.empty())
+    {
+        ImGui::TextDisabled("No bone mask assets created.");
+        return;
+    }
+
+    for (const auto& asset : assets)
+    {
+        // UUID = uin64 but pushID = int(32) so...
+        ImGui::PushID((void*)(uintptr_t)asset.uuid);
+
+        // --- Define clickable region ---
+        ImVec2 itemSize = {
+            THUMBNAIL_SIZE,
+            THUMBNAIL_SIZE + ImGui::GetTextLineHeightWithSpacing()
+        };
+
+        bool clicked = ImGui::InvisibleButton("##bone_mask_item", itemSize);
+
+        // --- Drag & Drop ---
+        if (ImGui::BeginDragDropSource())
+        {
+            BoneMaskDragPayload payload{};
+            payload.id = asset.uuid;
+
+            ImGui::SetDragDropPayload(
+                "BONEMASK_ASSET",
+                &payload,
+                sizeof(payload)
+            );
+            ImGui::Image(boneMaskIcon, { 32, 32 });
+            ImGui::SameLine();
+            ImGui::Text("%s", asset.name.c_str());
+            ImGui::EndDragDropSource();
+        }
+
+        // --- Draw visuals ON TOP of invisible button ---
+        ImVec2 min = ImGui::GetItemRectMin();
+        ImVec2 max = ImGui::GetItemRectMax();
+
+        // Draw thumbnail
+        ImGui::SetCursorScreenPos(min);
+        ImGui::Image(boneMaskIcon, { THUMBNAIL_SIZE, THUMBNAIL_SIZE });
+
+        // Draw label
+        ImGui::SetCursorScreenPos({
+            min.x,
+            min.y + THUMBNAIL_SIZE
+            });
+        ImGui::TextWrapped("%s", asset.name.c_str());
+
+        // --- Handle click ---
+        if (clicked)
+        {
+            assetManager.LoadBoneMask(asset.uuid);
+            EditorSelection::ClearAssetSelection();
+            EditorSelection::SetAsset(std::pair(asset.uuid, AssetType::BoneMask));
         }
 
         ImGui::NextColumn();
@@ -445,6 +612,7 @@ void AssetPanel::DrawTextureAssets()
         if (clicked)
         {
             // TODO: store selected asset UUID
+            EditorSelection::ClearAssetSelection();
             EditorSelection::SetAsset(std::pair(asset.uuid, AssetType::Texture));
         }
 
@@ -613,6 +781,43 @@ void AssetPanel::DrawCreateMaterialPopup()
                 assetManager.CreateMaterial(NewMaterialName);
 
                 strcpy_s(NewMaterialName, sizeof(NewMaterialName), "NewMaterial");
+
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+}
+
+void AssetPanel::DrawCreateBoneMaskPopup()
+{
+    if (openCreateBoneMaskPopup)
+    {
+        ImGui::OpenPopup("Create New Bone Mask");
+        openCreateBoneMaskPopup = false;
+    }
+
+    if (ImGui::BeginPopupModal("Create New Bone Mask", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Bone Mask Name");
+        ImGui::InputText("##BoneMaskName", NewBoneMaskName, IM_ARRAYSIZE(NewBoneMaskName));
+        ImGui::Separator();
+
+        if (ImGui::Button("Create", ImVec2(120, 0)))
+        {
+            if (strlen(NewBoneMaskName) > 0)
+            {
+                assetManager.CreateBoneMask(NewBoneMaskName);
+
+                strcpy_s(NewBoneMaskName, sizeof(NewBoneMaskName), "NewBoneMask");
 
                 ImGui::CloseCurrentPopup();
             }

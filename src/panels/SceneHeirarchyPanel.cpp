@@ -184,13 +184,28 @@ void SceneHierarchyPanel::DrawEntityNode(Scene* scene, Entity entity, Scene* act
             scene->DuplicateHierarchy(entity);
         }
 
+        bool hasParent = false;
+
+        if (scene->GetRegistry().hierarchies.Has(entity))
+        {
+            auto& h = scene->GetRegistry().hierarchies.Get(entity);
+            hasParent = (h.parent != NullEntity);
+        }
+
+        if (hasParent)
+        {
+            if (ImGui::MenuItem("Cut From Parent"))
+            {
+                scene->MakeOrphan(entity);
+            }
+        }
+
         if (ImGui::MenuItem("Delete"))
         {
             if (isSelected)
                 EditorSelection::ClearEntitySelection();
 
             scene->DestroyEntity(entity);
-
         }
 
         ImGui::EndPopup();

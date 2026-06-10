@@ -249,7 +249,7 @@ void ViewportPanel::DrawTransformGizmo()
     }
 
     // ---- Use world matrix ----
-    glm::mat4 transformMatrix = transform.localMatrix;
+    glm::mat4 transformMatrix = transform.worldMatrix;
 
     // ---- Draw gizmo ----
     ImGuizmo::Manipulate(
@@ -275,27 +275,39 @@ void ViewportPanel::DrawTransformGizmo()
 
     if (ImGuizmo::IsUsing())
     {
-        glm::vec3 translation;
+        // transformMatrix is a world matrix from the gizmo
+        // We need to convert it to local space
+
+        glm::mat4 parentWorld(1.0f); // identity = no parent (world space = local space)
+
+        if (scene->GetRegistry().hierarchies.Has(selectedEntity))
+        {
+            auto& h = scene->GetRegistry().hierarchies.Get(selectedEntity);
+            if (h.parent != NullEntity && scene->GetRegistry().transforms.Has(h.parent))
+            {
+                parentWorld = scene->GetRegistry().transforms.Get(h.parent).worldMatrix;
+            }
+        }
+
+        // Convert gizmo world matrix → local matrix
+        glm::mat4 localMatrix = glm::inverse(parentWorld) * transformMatrix;
+
+        // Decompose local matrix
+        glm::vec3 translation = glm::vec3(localMatrix[3]);
+
         glm::vec3 scale;
-        glm::quat rotation;
+        scale.x = glm::length(glm::vec3(localMatrix[0]));
+        scale.y = glm::length(glm::vec3(localMatrix[1]));
+        scale.z = glm::length(glm::vec3(localMatrix[2]));
 
-        // Decompose matrix
-        translation = glm::vec3(transformMatrix[3]);
-
-        // Extract scale
-        scale.x = glm::length(glm::vec3(transformMatrix[0]));
-        scale.y = glm::length(glm::vec3(transformMatrix[1]));
-        scale.z = glm::length(glm::vec3(transformMatrix[2]));
-
-        // Remove scale from rotation matrix
         glm::mat3 rotMatrix;
-        rotMatrix[0] = glm::vec3(transformMatrix[0]) / scale.x;
-        rotMatrix[1] = glm::vec3(transformMatrix[1]) / scale.y;
-        rotMatrix[2] = glm::vec3(transformMatrix[2]) / scale.z;
+        rotMatrix[0] = glm::vec3(localMatrix[0]) / scale.x;
+        rotMatrix[1] = glm::vec3(localMatrix[1]) / scale.y;
+        rotMatrix[2] = glm::vec3(localMatrix[2]) / scale.z;
 
-        rotation = glm::normalize(glm::quat_cast(rotMatrix));
+        glm::quat rotation = glm::normalize(glm::quat_cast(rotMatrix));
 
-        // ---- APPLY ----
+        // Apply local values
         transform.localPosition = translation;
         transform.localScale = scale;
         transform.localRotation = rotation;

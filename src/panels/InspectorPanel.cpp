@@ -39,6 +39,10 @@ void InspectorPanel::DrawAssetInspector(const std::pair<UUID, AssetType>& asset)
     if (asset.second == AssetType::Material) {
         DrawMaterialEditor(asset.first);
     }
+
+    if (asset.second == AssetType::BoneMask) {
+        DrawBoneMaskEditor(asset.first);
+    }
 }
 
 
@@ -169,6 +173,167 @@ void InspectorPanel::DrawMaterialEditor(const UUID& id)
         isAssetSaved = false;
     }
 }
+
+void InspectorPanel::DrawBoneMaskEditor(const UUID& id)
+{
+    auto boneMask = assets.GetBoneMask(id);
+
+    if (!boneMask)
+    {
+        ImGui::TextDisabled("Bone Mask failed to load");
+        return;
+    }
+
+    ImGui::Text("Name: %s", boneMask->name.c_str());
+
+    ImGui::Separator();
+
+    // =====================================================
+    // No skeleton assigned
+    // =====================================================
+
+    static bool skeletonPayloadDropped = false;
+
+    if (boneMask->skeletonId == UUID::Null)
+    {
+        ImGui::Text("Skeleton");
+
+        ImGui::Button(skeletonPayloadDropped ? "Skeleton asset missing" : "Drop Skeleton Here", { 250, 40 });
+
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload =
+                ImGui::AcceptDragDropPayload("SKELETON_ASSET"))
+            {
+                skeletonPayloadDropped = true;
+                const SkeletonDragPayload* data =
+                    static_cast<const SkeletonDragPayload*>(payload->Data);
+
+
+                Skeleton* skeleton =
+                    assets.GetSkeleton(data->id);
+
+                if (skeleton)
+                {
+                    boneMask->skeletonId = data->id;
+                    boneMask->boneNames.clear();
+                    boneMask->boneMask.clear();
+
+                    boneMask->boneNames.resize(
+                        skeleton->bones.size());
+
+                    boneMask->boneMask.resize(
+                        skeleton->bones.size(),
+                        0.0f);
+
+                    for (size_t i = 0; i < skeleton->bones.size(); i++)
+                    {
+                        boneMask->boneNames[i] =
+                        {
+                            static_cast<int>(i),
+                            skeleton->bones[i].name
+                        };
+                    }
+                }
+                
+
+            }
+
+            ImGui::EndDragDropTarget();
+        }
+
+        return;
+    }
+
+    // =====================================================
+    // Skeleton assigned
+    // =====================================================
+    Skeleton* skeleton =
+        assets.GetSkeleton(boneMask->skeletonId);
+
+
+    ImGui::Text("Skeleton : %s", skeleton->name.c_str());
+
+    ImGui::SameLine();
+
+    if (ImGui::SmallButton("Reset Skeleton"))
+    {
+        boneMask->skeletonId = UUID::Null;
+        boneMask->boneNames.clear();
+        boneMask->boneMask.clear();
+        return;
+    }
+
+    ImGui::Separator();
+
+    std::function<void(SkeletonBoneNode*)> DrawBoneNode;
+
+    DrawBoneNode =
+        [&](SkeletonBoneNode* node)
+        {
+            if (!node)
+                return;
+
+            int boneIndex = node->index;
+
+            ImGuiTreeNodeFlags flags =
+                node->childNodes.empty()
+                ? ImGuiTreeNodeFlags_Leaf
+                : 0;
+
+            bool open =
+                ImGui::TreeNodeEx(
+                    (void*)node,
+                    flags,
+                    "%s",
+                    node->name.c_str());
+
+            ImGui::SameLine(250);
+
+            bool enabled =
+                boneMask->boneMask[boneIndex] > 0.0f;
+
+            if (ImGui::Checkbox(
+                ("##enabled" + std::to_string(boneIndex)).c_str(),
+                &enabled))
+            {
+                if (!enabled)
+                {
+                    boneMask->boneMask[boneIndex] = 0.0f;
+                }
+                else
+                {
+                    boneMask->boneMask[boneIndex] = 1.0f;
+                }
+            }
+            if (enabled)
+            {
+                ImGui::SameLine();
+
+                ImGui::SetNextItemWidth(120);
+
+                ImGui::InputFloat(
+                    ("##mask" + std::to_string(boneIndex)).c_str(),
+                    &boneMask->boneMask[boneIndex],
+                    0.0f,
+                    0.0f,
+                    "%.3f");
+            }
+
+            if (open)
+            {
+                for (SkeletonBoneNode* child : node->childNodes)
+                {
+                    DrawBoneNode(child);
+                }
+
+                ImGui::TreePop();
+            }
+        };
+
+    DrawBoneNode(skeleton->rootNode);
+}
+
 
 void InspectorPanel::DrawEntityMaterialEditor(const Entity& entityID)
 {
@@ -566,56 +731,204 @@ void InspectorPanel::DrawEntityInspector(const Entity& entityID)
     if (registry.animations.Has(entityID))
     {
         AnimationComponent& animComponent = registry.animations.Get(entityID);
+        AnimatorController& ctrl = animComponent.animator;
+
+        bool removeAnimationComponent = false;
 
         if (ImGui::CollapsingHeader("Animation", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            const char* preview = "None";
-            Animation* currentAnim = nullptr;
+            if (ImGui::Button("Remove##anim"))
+                removeAnimationComponent = true;
 
-            if (animComponent.currentAnimationID != UUID::Null) {
-                currentAnim = assets.GetAnimation(animComponent.currentAnimationID);
-                if (currentAnim)
-                    preview = currentAnim->name.c_str();
-            }
+            ImGui::Separator();
 
-            if (ImGui::BeginCombo("Animation Clip", preview)) {
-                for (UUID animID : animComponent.animationIDs) {
-                    Animation* anim = assets.GetAnimation(animID);
+            if (ImGui::TreeNode("All Clips"))
+            {
+                for (UUID id : animComponent.animationIDs)
+                {
+                    Animation* anim = assets.GetAnimation(id);
                     if (!anim) continue;
-                    bool selected = (animID == animComponent.currentAnimationID);
-                    if (ImGui::Selectable(anim->name.c_str(), selected)) {
-                        animComponent.currentAnimationID = animID;
-                        animComponent.currentTime = 0.0f;
+
+                    auto& animNames = animComponent.animationNames;
+                    auto& nameToID = animComponent.animationNameToID;
+
+                    ImGui::PushID((uint64_t)id);
+
+                    char buffer[256];
+                    strcpy_s(buffer, animNames[id].c_str());
+
+                    if (ImGui::InputText("Name", buffer, sizeof(buffer)))
+                    {
+                        std::string oldName = animNames[id];
+                        std::string newName = buffer;
+
+                        nameToID.erase(oldName);
+
+                        animNames[id] = newName;
+                        nameToID[newName] = id;
                     }
-                    if (selected)
-                        ImGui::SetItemDefaultFocus();
+
+                    ImGui::SameLine();
+                    ImGui::TextDisabled("(%.1f ticks, %.0f tps)",
+                        anim->duration,
+                        anim->ticksPerSecond);
+
+                    ImGui::PopID();
                 }
-                ImGui::EndCombo();
-            }
 
-            static bool paused = false;
-            if (ImGui::Button(paused ? "Play" : "Pause"))
-                paused = !paused;
-            ImGui::SameLine();
-            if (ImGui::Button("Stop")) {
-                animComponent.currentTime = 0.0f;
-                paused = true;
-            }
+                if (animComponent.animationIDs.empty())
+                    ImGui::TextDisabled("None");
 
-            ImGui::Checkbox("Loop", &animComponent.looping);
-            ImGui::DragFloat("Speed", &animComponent.playbackSpeed, 0.05f, 0.0f, 5.0f);
-
-            if (currentAnim) {
-                float duration = currentAnim->duration;
-                ImGui::SliderFloat("Time", &animComponent.currentTime, 0.0f, duration);
-                ImGui::Text("Duration: %.2f", duration);
-                ImGui::Text("Ticks/Sec: %.2f", currentAnim->ticksPerSecond);
-                ImGui::Text("Tracks: %d", (int)currentAnim->tracks.size());
-            }
-            else {
-                ImGui::TextDisabled("No Animation Selected");
+                ImGui::TreePop();
             }
         }
+
+        if (removeAnimationComponent)
+            registry.animations.Remove(entityID);
+    }
+
+    // ---------------- SKELETON ----------------
+
+    if (registry.skeletons.Has(entityID))
+    {
+        SkeletonComponent& skeletonComponent =
+            registry.skeletons.Get(entityID);
+
+        Skeleton* skeleton =
+            assets.GetSkeleton(skeletonComponent.skeletonID);
+
+        if (skeleton)
+        {
+            if (ImGui::CollapsingHeader("Skeleton", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                std::function<void(SkeletonBoneNode*)> DrawBoneNode;
+
+                DrawBoneNode = [&](SkeletonBoneNode* node)
+                    {
+                        if (!node)
+                            return;
+
+                        ImGuiTreeNodeFlags flags =
+                            node->childNodes.empty()
+                            ? ImGuiTreeNodeFlags_Leaf
+                            : 0;
+
+                        if (ImGui::TreeNodeEx(
+                            (void*)node,
+                            flags,
+                            "%s",
+                            node->name.c_str()))
+                        {
+                            for (SkeletonBoneNode* child : node->childNodes)
+                                DrawBoneNode(child);
+
+                            ImGui::TreePop();
+                        }
+                    };
+
+                DrawBoneNode(skeleton->rootNode);
+            }
+        }
+    }
+
+    // ---------------- BONE ATTACHMENT ----------------
+
+    if (registry.boneAttachments.Has(entityID))
+    {
+        BoneAttachmentComponent& attachment =
+            registry.boneAttachments.Get(entityID);
+
+        bool removeBoneAttachment = false;
+
+        if (ImGui::CollapsingHeader("Bone Attachment",
+            ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            if (ImGui::Button("Remove##boneattachment"))
+                removeBoneAttachment = true;
+
+            ImGui::Separator();
+
+            ImGui::TextDisabled(
+                "Using Parent: %s",
+                attachment.skinnedRoot == NullEntity
+                ? "No Parent"
+                : registry.nameTags.Get(attachment.skinnedRoot).name.c_str()
+            );
+                
+            
+            ImGui::Separator();
+
+
+            static int rootMode = 0; // 0 = Root Parent, 1 = Raw Entity
+
+            ImGui::Text("Skinned Root");
+            ImGui::RadioButton("Root Parent", &rootMode, 0);
+            ImGui::SameLine();
+            ImGui::RadioButton("Raw Entity", &rootMode, 1);
+
+            if (rootMode == 0)
+            {
+
+                ImGui::TextDisabled(
+                    "Using Root Parent (%u)",
+                    (uint32_t)attachment.modelRoot
+                );
+            }
+            else
+            {
+                uint32_t entityValue =
+                    (uint32_t)attachment.modelRoot;
+
+                if (ImGui::InputScalar(
+                    "Entity ID",
+                    ImGuiDataType_U32,
+                    &entityValue))
+                {
+                    attachment.modelRoot =
+                        Entity(entityValue);
+                }
+            }
+
+            ImGui::Separator();
+
+            ImGui::InputInt(
+                "Bone Index",
+                &attachment.boneIndex
+            );
+
+            ImGui::Separator();
+
+            if (ImGui::TreeNode("Offset Matrix"))
+            {
+                for (int row = 0; row < 4; row++)
+                {
+                    ImGui::PushID(row);
+
+                    float values[4] =
+                    {
+                        attachment.offset[row][0],
+                        attachment.offset[row][1],
+                        attachment.offset[row][2],
+                        attachment.offset[row][3]
+                    };
+
+                    if (ImGui::InputFloat4("##row", values))
+                    {
+                        attachment.offset[row][0] = values[0];
+                        attachment.offset[row][1] = values[1];
+                        attachment.offset[row][2] = values[2];
+                        attachment.offset[row][3] = values[3];
+                    }
+
+                    ImGui::PopID();
+                }
+
+                ImGui::TreePop();
+            }
+        }
+
+        if (removeBoneAttachment)
+            registry.boneAttachments.Remove(entityID);
     }
 
     // ---------------- CAMERA ----------------
@@ -1023,22 +1336,22 @@ void InspectorPanel::DrawSaveOrCancelPopup()
 
 void InspectorPanel::HandleAssetEditorClear()
 {
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-    {
-        if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) ||
-            !s_IsHovered)
-        {
-            if (!ImGui::IsAnyItemHovered())
-            {
-                if (!isAssetSaved) {
-                    s_OpenSaveOrCancelPopup = true;
-                }
-                else {
-                    EditorSelection::ClearAssetSelection();
-                }
-            }
-        }
-    }
+    //if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+    //{
+    //    if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) ||
+    //        !s_IsHovered)
+    //    {
+    //        if (!ImGui::IsAnyItemHovered())
+    //        {
+    //            if (!isAssetSaved) {
+    //                s_OpenSaveOrCancelPopup = true;
+    //            }
+    //            else {
+    //                EditorSelection::ClearAssetSelection();
+    //            }
+    //        }
+    //    }
+    //}
 }
 
 void InspectorPanel::DrawAddComponentMenu(
@@ -1070,6 +1383,12 @@ void InspectorPanel::DrawAddComponentMenu(
             {
                 auto& cam = registry.cameras.Add(entity);
                 cam.recalculateProjection();
+            }
+
+        if (!registry.boneAttachments.Has(entity))
+            if (ImGui::MenuItem("Bone Attachment"))
+            {
+               registry.boneAttachments.Add(entity);
             }
 
         if (!registry.rigidBodies.Has(entity))
