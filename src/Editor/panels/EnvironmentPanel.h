@@ -2,10 +2,13 @@
 
 #include <imgui.h>
 
+// Editor
+#include "Editor/external/tinyfiledialogs.h"
+
+
 // Engine
 #include "resources/ImageLoader.h"
 #include "graphics/geometry/HDREnvironment.h"
-#include "external/tinyfiledialogs.h"
 
 namespace Lengine {
     class EnvironmentPanel

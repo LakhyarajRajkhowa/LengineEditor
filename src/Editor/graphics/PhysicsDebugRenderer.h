@@ -4,11 +4,14 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-#include "graphics/renderer/RenderPipeline.h"   // RenderContext
-#include "physics/PhysicsSystem.h"              // PhysicsSystem, PxToGLM
-#include "scene/components/ColliderComponent.h"          // ColliderComponent, ColliderShape
-#include "core/EditorSelection.h"               // EditorSelection
-#include "scene/scene.h"                        // Scene, Registry
+// Editor
+#include "Editor/core/EditorSelection.h"               
+
+// Engine
+#include "graphics/renderer/RenderPipeline.h"  
+#include "physics/PhysicsSystem.h"              
+#include "scene/components/ColliderComponent.h"          
+#include "scene/scene.h"                        
 
 namespace Lengine {
 

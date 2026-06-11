@@ -5,14 +5,15 @@
 #include <queue>
 
 // Editor
-#include "EditorSelection.h"
+#include "Editor/core/EditorSelection.h"
+#include "Editor/external/tinyfiledialogs.h"
+
 
 // Engine
 #include "graphics/camera/Camera3d.h"
 #include "scene/Scene.h"
 #include "scene/SceneManager.h"
 #include "resources/AssetManager.h"
-#include "external/tinyfiledialogs.h"
 
 
 namespace Lengine {

@@ -10,34 +10,37 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # -------------------------------
 
 file(GLOB CORE_SOURCES
-    "src/core/*.cpp"
-    "src/core/*.h"
+    "src/Editor/core/*.cpp"
+    "src/Editor/core/*.h"
 )
 
 file(GLOB GRAPHICS_SOURCES
-    "src/graphics/*.cpp"
-    "src/graphics/*.h"
+    "src/Editor/graphics/*.cpp"
+    "src/Editor/graphics/*.h"
 )
 
 file(GLOB PANEL_SOURCES
-    "src/panels/*.cpp"
-    "src/panels/*.h"
+    "src/Editor/panels/*.cpp"
+    "src/Editor/panels/*.h"
 )
 
 file(GLOB IMGUI_SOURCES
-    "src/imgui/*.cpp"
-    "src/imgui/*.h"
+    "src/Editor/imgui/*.cpp"
+    "src/Editor/imgui/*.h"
 )
 
 file(GLOB_RECURSE EXTERNAL_SRC
-    "src/external/tinyfiledialogs.c"
-    "src/external/tinyfiledialogs.h"
-    "src/external/ImGuizmo.cpp"
-    "src/external/ImGuizmo.h"
+    "src/Editor/external/tinyfiledialogs.c"
+    "src/Editor/external/tinyfiledialogs.h"
+    "src/Editor/external/ImGuizmo.cpp"
+    "src/Editor/external/ImGuizmo.h"
+    "src/Editor/external/imnodes.h"
+    "src/Editor/external/imnodes.cpp"
+
 )
 
 
-set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/external/imgui)
+set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/Editor/external/imgui)
 set(EXTERNAL_IMGUI_SOURCES
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_draw.cpp
@@ -76,14 +79,7 @@ add_executable(Editor
 # -------------------------------
 
 target_include_directories(Editor PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/core
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/panels
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/imgui
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/external/imgui
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/external
-    
+    ${CMAKE_CURRENT_SOURCE_DIR}/src   
 )
 
 # -------------------------------

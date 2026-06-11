@@ -6,8 +6,8 @@
 #include "EditorLayer.h"
 #include "EditorCameraHandler.h"
 #include "UIHandler.h"
-#include "imgui/ImguiLayer.h"
-#include "graphics/PhysicsDebugRenderer.h"
+#include "Editor/imgui/ImguiLayer.h"
+#include "Editor/graphics/PhysicsDebugRenderer.h"
 
 // Engine 
 #include "core/Timer.h"

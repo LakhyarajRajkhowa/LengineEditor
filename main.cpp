@@ -3,7 +3,7 @@
 #define SDL_MAIN_HANDLED
 
 // Engine
-#include "core/EditorApp.h"
+#include "Editor/core/EditorApp.h"
 
 // Editor
 #include "core/EngineCore.h"

@@ -7,7 +7,10 @@
 #include <imgui/backends/imgui_impl_sdl2.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
-#include "external/ImGuizmo.h"
+// Editor
+#include "Editor/external/ImGuizmo.h"
+
+// Engine
 #include "input/InputManager.h"
 
 namespace Lengine {
@@ -26,13 +29,11 @@ namespace Lengine {
 		};
 		void Init(SDL_Window* window, SDL_GLContext glContext);
 		void shutdown();
-		// process event and return true if ImGui consumed it (optional)
 		void processEvent(const SDL_Event& e);
 		void beginFrame();
 		void endFrame();
 
 
-		// helper
 		bool wantsCaptureMouse() const;
 		bool wantsCaptureKeyboard() const;
 

@@ -10,7 +10,9 @@
 #include <imgui/backends/imgui_impl_opengl3.h>
 
 // Editor
-#include "EditorSelection.h"
+#include "Editor/core/EditorSelection.h"
+#include "Editor/external/ImGuizmo.h"
+
 
 // Engine
 #include "graphics/camera/Camera3d.h"
@@ -21,7 +23,6 @@
 #include "platform/Window.h"
 #include "input/InputRouter.h"
 #include "input/InputContext.h"
-#include "external/ImGuizmo.h"
 
 
 

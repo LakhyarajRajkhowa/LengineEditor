@@ -6,21 +6,22 @@
 #include "external/imgui/imgui_internal.h"
 
 // Editor
-#include "MainMenuBar.h"
-#include "panels/ViewportPanel.h"
-#include "panels/SceneHeirarchyPanel.h"
-#include "panels/InspectorPanel.h"
-#include "panels/ConsolePanel.h"
-#include "panels/AssetPanel.h"
-#include "panels/PerformancePanel.h"
-#include "panels/RendererSettingsPanel.h"
-#include "panels/EnvironmentPanel.h"
+#include "Editor/panels/MainMenuBar.h"
+#include "Editor/panels/ViewportPanel.h"
+#include "Editor/panels/SceneHeirarchyPanel.h"
+#include "Editor/panels/InspectorPanel.h"
+#include "Editor/panels/ConsolePanel.h"
+#include "Editor/panels/AssetPanel.h"
+#include "Editor/panels/PerformancePanel.h"
+#include "Editor/panels/RendererSettingsPanel.h"
+#include "Editor/panels/EnvironmentPanel.h"
+#include "Editor/graphics/Gizmos.h"
+
 
 // Engine
 #include "scene/Scene.h"
 #include "scene/SceneManager.h"
 #include "graphics/geometry/ray.h"
-#include "graphics/Gizmos.h"
 #include "input/InputRouter.h"   
 #include "input/KeyBindings.h"
 

@@ -5,12 +5,13 @@
 #include <vector>
 
 // Editor
-#include "EditorSelection.h"
+#include "Editor/core/EditorSelection.h"
+#include "Editor/external/tinyfiledialogs.h"
+
 
 // Engine
 #include "utils/UUID.h"
 #include "resources/AssetManager.h"
-#include "external/tinyfiledialogs.h"
 #include "scripting/ScriptSystem.h"
 
 namespace Lengine {

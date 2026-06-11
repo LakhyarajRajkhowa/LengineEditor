@@ -3,7 +3,7 @@
 
 // Editor
 #include "AssetPanel.h"
-#include "EditorSelection.h"
+#include "Editor/core/EditorSelection.h"
 
 // Engine
 #include "scene/Scene.h"
