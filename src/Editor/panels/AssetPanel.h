@@ -7,7 +7,7 @@
 // Editor
 #include "Editor/core/EditorSelection.h"
 #include "Editor/external/tinyfiledialogs.h"
-
+#include "Editor/panels/DragDropPayloads.h"
 
 // Engine
 #include "utils/UUID.h"
@@ -15,37 +15,7 @@
 #include "scripting/ScriptSystem.h"
 
 namespace Lengine {
-    struct MeshDragPayload
-    {
-        UUID id;
-        char path[512];
-    };
-    struct TextureDragPayload
-    {
-        UUID id;
-        char path[512];
-    };
-    struct MaterialDragPayload
-    {
-        UUID id;
-        char path[512];
-    };
-    struct BoneMaskDragPayload
-    {
-        UUID id;
-        char path[512];
-    };
-    struct SkeletonDragPayload
-    {
-        UUID id;
-        char path[512];
-    };
-
-    struct ScriptDragPayload
-    {
-        char name[64];        
-        char sourceFile[256]; 
-    };
+ 
     enum class AssetFolderView
     {
         Root,       // showing folders

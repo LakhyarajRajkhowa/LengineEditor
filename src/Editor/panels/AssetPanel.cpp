@@ -500,7 +500,7 @@ void AssetPanel::DrawBoneMaskAssets()
             payload.id = asset.uuid;
 
             ImGui::SetDragDropPayload(
-                "BONEMASK_ASSET",
+                "BONE_MASK_ASSET",
                 &payload,
                 sizeof(payload)
             );

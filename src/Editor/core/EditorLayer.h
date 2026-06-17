@@ -15,6 +15,7 @@
 #include "Editor/panels/PerformancePanel.h"
 #include "Editor/panels/RendererSettingsPanel.h"
 #include "Editor/panels/EnvironmentPanel.h"
+#include "Editor/panels/AnimatorEditorPanel.h"
 #include "Editor/graphics/Gizmos.h"
 
 
@@ -80,7 +81,7 @@ namespace Lengine {
         PerformancePanel performancePanel;
         RendererSettingsPanel rendererSettingsPanel;
         EnvironmentPanel environmentPanel;
-
+        std::unordered_map<Entity, AnimatorEditorPanel> m_AnimatorPanels;
         MainMenuBar mainMenuBar;
 
         // External engine systems (not owned)
@@ -95,6 +96,9 @@ namespace Lengine {
 
         PhysicsSystem& physSystem;
         InputRouter& inputRouter;   // NEW
+
+        void OpenAnimatorEditor(Entity entity);
+
     };
 
 }

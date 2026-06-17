@@ -9,6 +9,7 @@
 
 // Editor
 #include "Editor/external/ImGuizmo.h"
+#include "Editor/external/imnodes.h"
 
 // Engine
 #include "input/InputManager.h"

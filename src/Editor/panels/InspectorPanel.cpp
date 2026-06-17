@@ -12,6 +12,7 @@ InspectorPanel::InspectorPanel(
     assets(asstMgr),
     physSystem(physSystem),
     scriptSystem(scriptSys)
+
 {}
 
 
@@ -188,6 +189,8 @@ void InspectorPanel::DrawBoneMaskEditor(const UUID& id)
 
     ImGui::Separator();
 
+
+
     // =====================================================
     // No skeleton assigned
     // =====================================================
@@ -245,9 +248,7 @@ void InspectorPanel::DrawBoneMaskEditor(const UUID& id)
         return;
     }
 
-    // =====================================================
-    // Skeleton assigned
-    // =====================================================
+
     Skeleton* skeleton =
         assets.GetSkeleton(boneMask->skeletonId);
 
@@ -264,9 +265,26 @@ void InspectorPanel::DrawBoneMaskEditor(const UUID& id)
         return;
     }
 
+
+
     ImGui::Separator();
 
     std::function<void(SkeletonBoneNode*)> DrawBoneNode;
+
+
+    auto SetChildren =
+        [&](auto&& self, SkeletonBoneNode* node, float value) -> void
+        {
+            if (!node)
+                return;
+
+            boneMask->boneMask[node->index] = value;
+
+            for (SkeletonBoneNode* child : node->childNodes)
+            {
+                self(self, child, value);
+            }
+        };
 
     DrawBoneNode =
         [&](SkeletonBoneNode* node)
@@ -297,15 +315,12 @@ void InspectorPanel::DrawBoneMaskEditor(const UUID& id)
                 ("##enabled" + std::to_string(boneIndex)).c_str(),
                 &enabled))
             {
-                if (!enabled)
-                {
-                    boneMask->boneMask[boneIndex] = 0.0f;
-                }
-                else
-                {
-                    boneMask->boneMask[boneIndex] = 1.0f;
-                }
+                SetChildren(
+                    SetChildren,
+                    node,
+                    enabled ? 1.0f : 0.0f);
             }
+
             if (enabled)
             {
                 ImGui::SameLine();
@@ -742,6 +757,11 @@ void InspectorPanel::DrawEntityInspector(const Entity& entityID)
 
             ImGui::Separator();
 
+            if (ImGui::Button("Animator Controller") && onOpenAnimatorEditor)
+                onOpenAnimatorEditor(EditorSelection::GetEntity());
+
+            ImGui::Separator();
+
             if (ImGui::TreeNode("All Clips"))
             {
                 for (UUID id : animComponent.animationIDs)
@@ -752,20 +772,27 @@ void InspectorPanel::DrawEntityInspector(const Entity& entityID)
                     auto& animNames = animComponent.animationNames;
                     auto& nameToID = animComponent.animationNameToID;
 
-                    ImGui::PushID((uint64_t)id);
+                    ImGui::PushID((int)id);
 
                     char buffer[256];
                     strcpy_s(buffer, animNames[id].c_str());
 
-                    if (ImGui::InputText("Name", buffer, sizeof(buffer)))
+                    if (ImGui::InputText("Name", buffer, sizeof(buffer),
+                        ImGuiInputTextFlags_EnterReturnsTrue))   // commit only on Enter, not every keystroke
                     {
                         std::string oldName = animNames[id];
                         std::string newName = buffer;
 
-                        nameToID.erase(oldName);
+                        //ignore if empty or if name is taken by a different clip
+                        bool nameConflict = nameToID.count(newName) && nameToID[newName] != id;
+                        bool unchanged = (newName == oldName);
 
-                        animNames[id] = newName;
-                        nameToID[newName] = id;
+                        if (!newName.empty() && !nameConflict && !unchanged)
+                        {
+                            nameToID.erase(oldName);
+                            animNames[id] = newName;
+                            nameToID[newName] = id;
+                        }
                     }
 
                     ImGui::SameLine();

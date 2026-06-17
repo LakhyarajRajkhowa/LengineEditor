@@ -1,5 +1,7 @@
 ﻿#include "EditorLayer.h"
 
+// TODO : While loading Assets/Prefabs , that uses a different thread, turn off editor panels or freeze them
+
 namespace Lengine {
 
     static bool isPlaying = false;
@@ -41,7 +43,10 @@ namespace Lengine {
         physSystem(physSystem),
         mainMenuBar(scnMgr)
     {
-
+        inspectorPanel.onOpenAnimatorEditor = [this](Entity e)
+            {
+                OpenAnimatorEditor(e);
+            };
     }
 
     void EditorLayer::OnAttach() {
@@ -62,7 +67,6 @@ namespace Lengine {
         BeginDockspace(mode);
 
 
-
         //  Render panels
         if (!viewportPanel.viewportFullscreen) {
 
@@ -76,6 +80,18 @@ namespace Lengine {
             rendererSettingsPanel.OnImGuiRender();
             environmentPanel.OnImGuiRender(hdrSkybox);
 
+            for (auto it = m_AnimatorPanels.begin(); it != m_AnimatorPanels.end(); )
+            {
+                it->second.OnImGuiRender();
+                if (!it->second.IsOpen())          // panel closed its own window
+                    it = m_AnimatorPanels.erase(it);
+                else
+                    ++it;
+            }
+            
+
+           
+
         }
         else {
 
@@ -84,6 +100,30 @@ namespace Lengine {
 
     }
 
+    // EditorLayer.cpp
+    void EditorLayer::OpenAnimatorEditor(Entity entity)
+    {
+        Scene& scene = *sceneManager.GetEditorScene();
+        Registry& reg = scene.GetRegistry();
+
+        auto it = m_AnimatorPanels.find(entity);
+        if (it == m_AnimatorPanels.end())
+        {
+            // Build a unique ImGui window title using the entity ID
+            std::string title = "Animator Editor##" + std::to_string((uint64_t)entity);
+            auto [inserted, _] = m_AnimatorPanels.emplace(
+                std::piecewise_construct,
+                std::forward_as_tuple(entity),
+                std::forward_as_tuple(reg, assetManager,  std::move(title))
+            );
+            inserted->second.SetTarget(entity);
+        }
+        else
+        {
+            // Already open — just re-focus / re-target in case component changed
+            it->second.SetTarget(entity);
+        }
+    }
 
     // Dockspace
     void EditorLayer::BeginDockspace(EditorMode& mode)
@@ -150,7 +190,6 @@ namespace Lengine {
 
         ImGui::DockBuilderFinish(dockspace_id);
     }
-
 
 
 }

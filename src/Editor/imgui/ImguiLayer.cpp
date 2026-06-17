@@ -1,11 +1,14 @@
 #include "ImGuiLayer.h"
 
+// Engine
 #include "core/Paths.h"
 
 using namespace Lengine;
 void ImGuiLayer::Init(SDL_Window* window, SDL_GLContext glContext) {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+    ImNodes::CreateContext();
+
 	ImGuiIO& io = ImGui::GetIO(); 
 
     
@@ -23,6 +26,8 @@ void ImGuiLayer::Init(SDL_Window* window, SDL_GLContext glContext) {
 void ImGuiLayer::shutdown() {
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
+
+    ImNodes::DestroyContext();
 	ImGui::DestroyContext();
 }
 

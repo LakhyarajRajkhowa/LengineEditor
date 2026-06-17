@@ -3,6 +3,7 @@
 
 // Editor
 #include "AssetPanel.h"
+#include "AnimatorEditorPanel.h"
 #include "Editor/core/EditorSelection.h"
 
 // Engine
@@ -26,6 +27,9 @@ namespace Lengine {
         );
 
         void OnImGuiRender();
+
+        std::function<void(Entity)> onOpenAnimatorEditor;
+
 
 
     private:
@@ -55,7 +59,6 @@ namespace Lengine {
             Registry& registry,
             Scene* scene);
         void DrawScriptComponent(const Entity& entityID, Registry& registry);
-
 
 
 
