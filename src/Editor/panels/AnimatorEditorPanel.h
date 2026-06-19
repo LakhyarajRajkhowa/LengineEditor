@@ -1,12 +1,11 @@
 #pragma once
 
 #include <queue>
-#include <imgui.h>
 
 // Editor
+#include "Editor/external/imgui/imgui.h"
 #include "Editor/external/imnodes.h"
 #include "Editor/panels/DragDropPayloads.h"
-
 
 // Engine
 #include "resources/AssetManager.h"
@@ -77,6 +76,7 @@ namespace Lengine
         // ── Blend-node sub-inspectors ────────────────────────────────────────
         void InspectClipNode(BlendNode& node);
         void InspectBlend1DNode(BlendNode& node);
+        void InspectBlend2DNode(BlendNode& node);
         void InspectMaskedNode(int nodeIdx, BlendNode& node);
 
         // ── Helpers ──────────────────────────────────────────────────────────

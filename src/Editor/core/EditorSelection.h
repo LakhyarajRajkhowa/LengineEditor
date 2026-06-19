@@ -10,49 +10,58 @@ namespace Lengine {
     public:
         static void SetAsset(const std::pair<UUID, AssetType>& asset)
         {
-            s_SelectedAsset = asset;
+            selectedAsset = asset;
         }
 
         static const std::pair<UUID, AssetType> GetAsset()
         {
-            return s_SelectedAsset;
+            return selectedAsset;
         }
 
         static bool HasAsset()
         {
-            return s_SelectedAsset.first != UUID::Null;
+            return selectedAsset.first != UUID::Null;
         }
 
         static void ClearAssetSelection()
         {
             
-            s_SelectedAsset.first = UUID::Null;
+            selectedAsset.first = UUID::Null;
         }
 
         static void SetEntity(Entity id)
         {
-            s_SelectedEntity = id;
+            selectedEntity = id;
         }
 
         static Entity GetEntity()
         {
-            return s_SelectedEntity;
+            return selectedEntity;
         }
 
         static bool HasEntity()
         {
-            return s_SelectedEntity != NullEntity;
+            return selectedEntity != NullEntity;
         }
 
         static void ClearEntitySelection()
         {
-            s_SelectedEntity = NullEntity;
+            selectedEntity = NullEntity;
+        }
+
+        static void SetCopiedEntity(const Entity e) {
+            copiedEntity = e;
+        }
+
+        static Entity GetCopiedEntity() {
+            return copiedEntity;
         }
 
     private:
-        static inline std::pair<UUID , AssetType> s_SelectedAsset = std::pair(UUID::Null, AssetType::Unknown);
+        static inline std::pair<UUID , AssetType> selectedAsset = std::pair(UUID::Null, AssetType::Unknown);
         static bool isAssetSaved;
-        static inline Entity s_SelectedEntity = NullEntity;
+        static inline Entity selectedEntity = NullEntity;
+        static inline Entity copiedEntity = NullEntity;
     };
 
 

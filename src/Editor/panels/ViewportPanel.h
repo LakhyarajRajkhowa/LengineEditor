@@ -3,22 +3,18 @@
 #include <glm/glm.hpp>
 #include <GL/glew.h>
 
-#define IMGUI_ENABLE_DOCKING
-#define IMGUI_ENABLE_DOCKING_EXTENSION
-#include "imgui.h"
-#include <imgui/backends/imgui_impl_sdl2.h>
-#include <imgui/backends/imgui_impl_opengl3.h>
 
 // Editor
 #include "Editor/core/EditorSelection.h"
-#include "Editor/external/ImGuizmo.h"
+#include "Editor/external/imgui/imgui.h"
+#include "Editor/external/imgui/imgui_internal.h"
 
+#include "Editor/external/ImGuizmo.h"
 
 // Engine
 #include "graphics/camera/Camera3d.h"
 #include "graphics/frameBuffers/Framebuffer.h"
 #include "utils/fps.h"
-#include "utils/imGuiScreens.h"
 #include "scene/SceneManager.h"
 #include "platform/Window.h"
 #include "input/InputRouter.h"

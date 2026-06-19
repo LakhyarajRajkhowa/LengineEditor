@@ -1,5 +1,5 @@
 #include "AssetPanel.h"
-#include <imgui.h>
+
 #define THUMBNAIL_SIZE 64.0f
 #define PADDING 12.0f
 

@@ -1,10 +1,10 @@
 #pragma once
-#include <imgui.h>
 
 // Editor
 #include "AssetPanel.h"
 #include "AnimatorEditorPanel.h"
 #include "Editor/core/EditorSelection.h"
+#include "Editor/external/imgui/imgui.h"
 
 // Engine
 #include "scene/Scene.h"

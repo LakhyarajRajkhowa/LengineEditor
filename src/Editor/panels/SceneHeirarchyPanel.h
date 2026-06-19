@@ -1,5 +1,4 @@
 #pragma once
-#include <imgui.h>
 #include <vector>
 #include <string>
 #include <queue>
@@ -7,6 +6,7 @@
 // Editor
 #include "Editor/core/EditorSelection.h"
 #include "Editor/external/tinyfiledialogs.h"
+#include "Editor/external/imgui/imgui.h"
 
 
 // Engine

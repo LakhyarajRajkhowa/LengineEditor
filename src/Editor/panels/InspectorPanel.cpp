@@ -969,20 +969,20 @@ void InspectorPanel::DrawEntityInspector(const Entity& entityID)
             const char* projectionTypes[] = { "Perspective", "Orthographic" };
             int currentType = static_cast<int>(editorCamera.projectionType);
             if (ImGui::Combo("Projection", &currentType, projectionTypes, IM_ARRAYSIZE(projectionTypes))) {
-                editorCamera.projectionType = static_cast<CameraComponent::ProjectionType>(currentType);
+                editorCamera.projectionType = static_cast<ProjectionType>(currentType);
                 editorCamera.recalculateProjection();
             }
 
             ImGui::Spacing();
 
-            if (editorCamera.projectionType == CameraComponent::ProjectionType::Perspective) {
+            if (editorCamera.projectionType == ProjectionType::Perspective) {
                 if (ImGui::DragFloat("FOV", &editorCamera.fov, 0.1f, 1.0f, 179.0f, "%.1f deg"))
                     editorCamera.recalculateProjection();
                 if (ImGui::DragFloat("Aspect Ratio", &editorCamera.aspectRatio, 0.01f, 0.1f, 10.0f))
                     editorCamera.recalculateProjection();
             }
 
-            if (editorCamera.projectionType == CameraComponent::ProjectionType::Orthographic) {
+            if (editorCamera.projectionType == ProjectionType::Orthographic) {
                 if (ImGui::DragFloat("Ortho Size", &editorCamera.orthoSize, 0.1f, 0.1f, 1000.0f))
                     editorCamera.recalculateProjection();
                 if (ImGui::DragFloat("Aspect Ratio", &editorCamera.aspectRatio, 0.01f, 0.1f, 10.0f))
@@ -996,6 +996,52 @@ void InspectorPanel::DrawEntityInspector(const Entity& entityID)
                 editorCamera.recalculateProjection();
 
             ImGui::Spacing();
+
+            ImGui::Separator();
+            ImGui::Text("Target");
+
+            // Current target shown in a box
+            std::string targetName = "None";
+
+            if (editorCamera.target != NullEntity &&
+                registry.nameTags.Has(editorCamera.target))
+            {
+                targetName =
+                    registry.nameTags.Get(editorCamera.target).name;
+            }
+
+            ImGui::Button(targetName.c_str(), ImVec2(-1.0f, 0.0f));
+
+
+            // Clipboard info + Paste button on same line
+            std::string copiedName = "None";
+
+            Entity copiedEntity = EditorSelection::GetCopiedEntity();
+            if (copiedEntity != NullEntity &&
+                registry.nameTags.Has(copiedEntity))
+            {
+                copiedName =
+                    registry.nameTags.Get(copiedEntity).name;
+            }
+
+            ImGui::TextDisabled("Clipboard: %s", copiedName.c_str());
+
+            ImGui::SameLine();
+
+            if (ImGui::SmallButton("Paste"))
+            {
+                editorCamera.target = copiedEntity;
+            }
+
+
+            if (ImGui::SmallButton("Clear"))
+            {
+                editorCamera.target = NullEntity;
+            }
+
+            ImGui::Separator();
+            ImGui::Spacing();
+
 
             bool isPrimary = scene->GetPrimaryCamera() == entity;
             if (ImGui::Checkbox("Primary Camera", &isPrimary)) {

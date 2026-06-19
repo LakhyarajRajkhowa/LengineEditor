@@ -7,6 +7,7 @@
 #include "EditorCameraHandler.h"
 #include "UIHandler.h"
 #include "Editor/imgui/ImguiLayer.h"
+#include "Editor/imgui/ImGuiLoadingScreen.h"
 #include "Editor/graphics/PhysicsDebugRenderer.h"
 
 // Engine 
@@ -151,6 +152,9 @@ namespace Lengine {
         ScriptSystem& scriptSystem;
     
         EditorMode mode = EditorMode::EDIT;
+
+        ImGuiLoadingScreen loadingScreen;
+
     };
 
    

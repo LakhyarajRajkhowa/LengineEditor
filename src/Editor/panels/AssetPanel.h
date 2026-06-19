@@ -7,6 +7,7 @@
 // Editor
 #include "Editor/core/EditorSelection.h"
 #include "Editor/external/tinyfiledialogs.h"
+#include "Editor/external/imgui/imgui.h"
 #include "Editor/panels/DragDropPayloads.h"
 
 // Engine

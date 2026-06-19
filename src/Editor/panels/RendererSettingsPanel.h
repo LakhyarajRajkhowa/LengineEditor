@@ -1,6 +1,7 @@
 #pragma once
 
-#include <imgui.h>
+// Editor
+#include "Editor/external/imgui/imgui.h"
 
 // Engine
 #include "core/settings.h"

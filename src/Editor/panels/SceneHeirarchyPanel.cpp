@@ -169,6 +169,8 @@ void SceneHierarchyPanel::DrawEntityNode(Scene* scene, Entity entity, Scene* act
         flags
     );
 
+    
+
     // ---- Selection ----
     if (ImGui::IsItemClicked())
     {
@@ -182,6 +184,11 @@ void SceneHierarchyPanel::DrawEntityNode(Scene* scene, Entity entity, Scene* act
         if (ImGui::MenuItem("Create Copy"))
         {
             scene->DuplicateHierarchy(entity);
+        }
+
+        if (ImGui::MenuItem("Copy Entity ID"))
+        {
+            EditorSelection::SetCopiedEntity(entity);
         }
 
         bool hasParent = false;

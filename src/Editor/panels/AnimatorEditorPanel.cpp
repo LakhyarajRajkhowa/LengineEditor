@@ -404,6 +404,10 @@ namespace Lengine
             ImGui::TextDisabled("param: %s", node.parameterName.c_str());
             ImGui::TextDisabled("%d entries", (int)node.blend1DEntries.size());
             break;
+        case BlendNodeType::Blend2D:
+            ImGui::TextDisabled("params: %s, %s", node.parameterNameX.c_str(), node.parameterNameY.c_str());
+            ImGui::TextDisabled("%d entries", (int)node.blend2DEntries.size());
+            break;
         case BlendNodeType::Masked:
             ImGui::TextDisabled("base:    node %d", node.baseNodeIndex);
             ImGui::TextDisabled("overlay: node %d", node.overlayNodeIndex);
@@ -578,6 +582,11 @@ namespace Lengine
                 ImGui::TextDisabled("param: %s  (%d entries)",
                     node.parameterName.c_str(), (int)node.blend1DEntries.size());
                 break;
+            case BlendNodeType::Blend2D:
+                ImGui::TextDisabled("params: %s/%s  (%d entries)",
+                    node.parameterNameX.c_str(), node.parameterNameY.c_str(),
+                    (int)node.blend2DEntries.size());
+                break;
             case BlendNodeType::Masked:
                 ImGui::TextDisabled("base %d / overlay %d",
                     node.baseNodeIndex, node.overlayNodeIndex);
@@ -618,10 +627,10 @@ namespace Lengine
 
         ImGui::Spacing();
 
-        const char* types[] = { "Clip", "Blend 1D", "Masked" };
+        const char* types[] = { "Clip", "Blend 1D", "Blend 2D", "Masked" };
         int typeIdx = (int)node.type;
         ImGui::SetNextItemWidth(-1);
-        if (ImGui::Combo("##btype", &typeIdx, types, 3))
+        if (ImGui::Combo("##btype", &typeIdx, types, 4))   
             node.type = (BlendNodeType)typeIdx;
 
         ImGui::Separator();
@@ -630,6 +639,7 @@ namespace Lengine
         {
         case BlendNodeType::Clip:    InspectClipNode(node);    break;
         case BlendNodeType::Blend1D: InspectBlend1DNode(node); break;
+        case BlendNodeType::Blend2D: InspectBlend2DNode(node); break;
         case BlendNodeType::Masked:  InspectMaskedNode(state.rootNodeIndex, node);  break;
         }
 
@@ -821,10 +831,10 @@ namespace Lengine
 
         ImGui::Spacing();
 
-        const char* types[] = { "Clip", "Blend 1D", "Masked" };
+        const char* types[] = { "Clip", "Blend 1D", "Blend 2D", "Masked" };
         int typeIdx = (int)node.type;
         ImGui::SetNextItemWidth(-1);
-        if (ImGui::Combo("##ntype", &typeIdx, types, 3))
+        if (ImGui::Combo("##btype", &typeIdx, types, 4))   
             node.type = (BlendNodeType)typeIdx;
 
         ImGui::Separator();
@@ -833,6 +843,7 @@ namespace Lengine
         {
         case BlendNodeType::Clip:    InspectClipNode(node);            break;
         case BlendNodeType::Blend1D: InspectBlend1DNode(node);         break;
+        case BlendNodeType::Blend2D: InspectBlend2DNode(node);         break;
         case BlendNodeType::Masked:  InspectMaskedNode(nodeIdx, node); break;
         }
 
@@ -1000,6 +1011,107 @@ namespace Lengine
             node.AddEntry(UUID::Null, 0.0f);
     }
 
+    void AnimatorEditorPanel::InspectBlend2DNode(BlendNode& node)
+    {
+        auto* comp = GetComponent();
+        auto* ctrl = GetController();
+        if (!ctrl) return;
+
+        std::vector<std::string> fnStrs;
+        for (auto& [k, v] : ctrl->floatParams)
+            fnStrs.push_back(k);
+
+        std::vector<const char*> floatNames;
+        for (auto& s : fnStrs) floatNames.push_back(s.c_str());
+
+        auto drawParamCombo = [&](const char* label, std::string& target)
+            {
+                int curIdx = -1;
+                for (int i = 0; i < (int)fnStrs.size(); i++)
+                    if (fnStrs[i] == target) { curIdx = i; break; }
+
+                ImGui::TextDisabled("%s", label);
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::Combo(("##" + std::string(label)).c_str(), &curIdx,
+                    floatNames.data(), (int)floatNames.size()) && curIdx >= 0)
+                    target = fnStrs[curIdx];
+            };
+
+        drawParamCombo("Param X", node.parameterNameX);
+        drawParamCombo("Param Y", node.parameterNameY);
+
+        ImGui::DragFloat("Playback speed", &node.playbackSpeed, 0.01f, 0.0f, 5.0f, "%.2f");
+
+        ImGui::Spacing();
+        ImGui::TextDisabled("Entries  (clip → X, Y)");
+        ImGui::Separator();
+
+        if (ImGui::BeginTable("##b2d", 4,
+            ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp))
+        {
+            ImGui::TableSetupColumn("Clip", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+            ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+            ImGui::TableSetupColumn("##del", ImGuiTableColumnFlags_WidthFixed, 20.0f);
+            ImGui::TableHeadersRow();
+
+            for (int i = 0; i < (int)node.blend2DEntries.size(); i++)
+            {
+                auto& e = node.blend2DEntries[i];
+                ImGui::PushID(i);
+                ImGui::TableNextRow();
+
+                ImGui::TableSetColumnIndex(0);
+                const char* cname = ClipName(e.animID);
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::BeginCombo("##eclip", cname))
+                {
+                    if (comp)
+                    {
+                        for (auto& [id, name] : comp->animationNames)
+                        {
+                            bool sel = (id == e.animID);
+                            if (ImGui::Selectable(name.c_str(), sel))
+                                e.animID = id;
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* p =
+                        ImGui::AcceptDragDropPayload("ASSET_ANIMATION"))
+                        e.animID = *static_cast<const UUID*>(p->Data);
+                    ImGui::EndDragDropTarget();
+                }
+
+                ImGui::TableSetColumnIndex(1);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##ex", &e.position.x, 0.01f);
+
+                ImGui::TableSetColumnIndex(2);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##ey", &e.position.y, 0.01f);
+
+                ImGui::TableSetColumnIndex(3);
+                if (ImGui::SmallButton("x"))
+                {
+                    node.blend2DEntries.erase(node.blend2DEntries.begin() + i);
+                    ImGui::PopID();
+                    ImGui::EndTable();
+                    return;
+                }
+
+                ImGui::PopID();
+            }
+            ImGui::EndTable();
+        }
+
+        if (ImGui::Button("+ Entry"))
+            node.AddEntry2D(UUID::Null, glm::vec2(0.0f));
+    }
+
     void AnimatorEditorPanel::InspectMaskedNode(int nodeIdx, BlendNode& node)
     {
         auto* ctrl = GetController();
@@ -1143,6 +1255,7 @@ namespace Lengine
         {
         case BlendNodeType::Clip:    return "Clip";
         case BlendNodeType::Blend1D: return "1D Blend";
+        case BlendNodeType::Blend2D: return "2D Blend";
         case BlendNodeType::Masked:  return "Masked";
         }
         return "?";
@@ -1154,6 +1267,7 @@ namespace Lengine
         {
         case BlendNodeType::Clip:    return { 0.21f, 0.62f, 0.46f, 1.f };
         case BlendNodeType::Blend1D: return { 0.21f, 0.55f, 0.80f, 1.f };
+        case BlendNodeType::Blend2D: return { 0.85f, 0.55f, 0.20f, 1.f };
         case BlendNodeType::Masked:  return { 0.56f, 0.35f, 0.71f, 1.f };
         }
         return { 0.4f, 0.4f, 0.4f, 1.f };

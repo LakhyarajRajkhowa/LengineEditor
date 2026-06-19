@@ -1,9 +1,5 @@
 #pragma once
 
-#define IMGUI_ENABLE_DOCKING
-
-#include "external/imgui/imgui.h"
-#include "external/imgui/imgui_internal.h"
 
 // Editor
 #include "Editor/panels/MainMenuBar.h"

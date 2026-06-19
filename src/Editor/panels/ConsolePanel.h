@@ -1,5 +1,7 @@
 #pragma once
-#include <imgui/imgui.h>
+
+// Editor
+#include "Editor/external/imgui/imgui.h"
 
 // Engine
 #include "logging/OutputRedirect.h"

@@ -1,15 +1,18 @@
 #pragma once
 #include <SDL2/SDL.h>
-#define IMGUI_ENABLE_DOCKING
 
-#include <imgui/imgui.h>
-#include <imgui/imgui_internal.h>
-#include <imgui/backends/imgui_impl_sdl2.h>
-#include <imgui/backends/imgui_impl_opengl3.h>
+#define IMGUI_ENABLE_DOCKING
+#define IMGUI_ENABLE_DOCKING_EXTENSION
 
 // Editor
+#include "Editor/external/imgui/imgui.h"
+#include "Editor/external/imgui/imgui_internal.h"
+#include "Editor/external/imgui/backends/imgui_impl_sdl2.h"
+#include "Editor/external/imgui/backends/imgui_impl_opengl3.h"
 #include "Editor/external/ImGuizmo.h"
 #include "Editor/external/imnodes.h"
+
+
 
 // Engine
 #include "input/InputManager.h"

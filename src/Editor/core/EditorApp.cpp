@@ -78,9 +78,11 @@ namespace Lengine {
         inputRouter.setUIHandler(&uiHandler);
         inputRouter.setContext(InputContext::UI);
         
-
         editorOverlays.InitGizmos();
         editorOverlays.InitPhysicsDebugRenderer();
+
+        assetManager.SetLoadingScreen(
+            &loadingScreen);
 
     }
 
@@ -143,8 +145,7 @@ namespace Lengine {
             renderPipeline.GetHDRSkybox(),
             mode);
 
-        assetManager.drawLoadingScreens();
-        assetManager.drawImportingScreens();
+        loadingScreen.Render();
 
         imguiLayer.endFrame();
     }

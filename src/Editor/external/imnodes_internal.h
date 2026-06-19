@@ -1,8 +1,9 @@
 #pragma once
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include <imgui.h>
-#include <imgui_internal.h>
+// changed by me
+#include "Editor/external/imgui/imgui.h"
+#include <Editor/external/imgui/imgui_internal.h>
 
 #include "imnodes.h"
 
